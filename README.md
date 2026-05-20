@@ -6,7 +6,9 @@ Sistema web empresarial para la administración integral de clínicas veterinari
 
 ## Descripción
 
-**GestionVeterinaria** es una aplicación web moderna, modular y escalable orientada a centralizar y automatizar los procesos clínicos, administrativos, comerciales y operativos de una clínica veterinaria. La plataforma permite gestionar desde el acceso de usuarios hasta el historial clínico de cada paciente, pasando por la agenda médica, el inventario farmacéutico y el control de ventas, todo desde una única interfaz.
+**GestionVeterinaria**  es una SPA (Single Page Application) desarrollada con framework Vue.js en frontend con datos estáticos (mock data), diseñada para digitalizar y optimizar la gestión de una clínica veterinaria. La plataforma permite centralizar procesos administrativos y clínicos mediante módulos para gestionar clientes, médicos, mascotas, citas y agenda médica desde una interfaz moderna, modular y escalable.
+**La propuesta técnica se basa en tres pilares:**
+Arquitectura modular por dominio. Cada módulo del negocio (autenticación, personas, mascotas, citas) tiene su propia carpeta de vistas, componentes, store y tipos. Esto permite que el equipo trabaje en paralelo sin conflictos y que cada módulo sea reemplazable de forma independiente cuando se conecte el backend real.
 
 ---
 
@@ -16,7 +18,6 @@ Las clínicas veterinarias medianas y pequeñas suelen operar con registros en p
 
 - Pérdida de información clínica de pacientes.
 - Dificultad para coordinar la agenda entre médicos.
-- Falta de trazabilidad en tratamientos, vacunas y medicamentos.
 - Procesos administrativos lentos y propensos a errores.
 
 GestionVeterinaria resuelve estos problemas ofreciendo una plataforma centralizada que conecta todas las áreas de la clínica en tiempo real.
@@ -255,15 +256,12 @@ Creación, edición y control de estado de citas. Vista de lista con filtros y v
 
 | Nombre | Rol en el proyecto |
 |---|---|
-| *(Nombre del integrante 1)* | *(Rol / módulo asignado)* |
-| *(Nombre del integrante 2)* | *(Rol / módulo asignado)* |
-| *(Nombre del integrante 3)* | *(Rol / módulo asignado)* |
+| *Romel Yugcha* | *Desarrollador* |
 
-**Asignatura:** *(Nombre de la asignatura)*
-**Institución:** *(Nombre de la institución)*
-**Período académico:** *(Semestre / año)*
-**Docente:** *(Nombre del docente)*
+
+**Asignatura:** *Aplicaciones de Tecnologias Web*
+**Institución:** *ESPE*
+**Período académico:** *2026*
 
 ---
 
-> Proyecto académico — datos de prueba incluidos, sin conexión a base de datos real en Fase 1.
