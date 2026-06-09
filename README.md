@@ -397,12 +397,8 @@ El sistema implementa un modelo RBAC (Role-Based Access Control) con 4 roles y 1
 
 | Campo | Detalle |
 |---|---|
-| **Integrante(s)** | *(Nombre del autor o autores)* |
-| **Rol en el proyecto** | *(Módulo o área asignada)* |
-| **Asignatura** | *(Nombre de la asignatura)* |
-| **Institución** | *(Nombre de la institución)* |
-| **Período académico** | *(Semestre / año)* |
-| **Docente** | *(Nombre del docente)* |
+| **Integrante(s)** | *Romel Yugcha* |
+
 
 ---
 
@@ -412,4 +408,3 @@ Este proyecto fue desarrollado con fines académicos. Todos los datos incluidos 
 
 ---
 
-> **Estado del proyecto:** Fase 1 completada — frontend funcional con datos en memoria. El backend (`/backend`) está pendiente de implementación.
