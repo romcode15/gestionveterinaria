@@ -23,12 +23,26 @@ const router = createRouter({
       component: () => import('@/views/auth/UnauthorizedView.vue'),
     },
 
-    // Dashboard
+    // Dashboard admin/staff
     {
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('@/views/DashboardView.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, rolesExcluidos: ['cliente'] },
+    },
+
+    // Portal cliente
+    {
+      path: '/mi-portal',
+      name: 'cliente-dashboard',
+      component: () => import('@/views/cliente/ClienteDashboardView.vue'),
+      meta: { requiresAuth: true, permiso: 'cliente.mis-mascotas' },
+    },
+    {
+      path: '/mis-citas',
+      name: 'mis-citas',
+      component: () => import('@/views/cliente/MisCitasView.vue'),
+      meta: { requiresAuth: true, permiso: 'cliente.mis-citas' },
     },
 
     // Módulo Personas - Clientes
@@ -91,9 +105,25 @@ router.beforeEach((to, _from, next) => {
     return next({ name: 'login', query: { redirect: to.fullPath } })
   }
 
-  // Ruta solo para invitados (login)
+  // Ruta solo para invitados (login) → redirigir al portal correcto según rol
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
+    if (authStore.isCliente) {
+      return next({ name: 'cliente-dashboard' })
+    }
     return next({ name: 'dashboard' })
+  }
+
+  // Un cliente que intenta entrar al /dashboard general → redirigir a su portal
+  if (to.name === 'dashboard' && authStore.isAuthenticated && authStore.isCliente) {
+    return next({ name: 'cliente-dashboard' })
+  }
+
+  // Rutas excluidas para ciertos roles
+  if (to.meta.rolesExcluidos && authStore.isAuthenticated) {
+    const excluidos = to.meta.rolesExcluidos as string[]
+    if (authStore.roles.some((r) => excluidos.includes(r))) {
+      return next({ name: 'unauthorized' })
+    }
   }
 
   // Verificar permiso específico

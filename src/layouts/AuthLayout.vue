@@ -2,12 +2,15 @@
 </script>
 
 <template>
-  <div class="min-h-screen bg-linear-to-br from-primary-800 via-primary-700 to-secondary-700 flex items-center justify-center p-4">
+  <div
+    class="min-h-screen flex items-center justify-center p-4"
+    style="background: linear-gradient(135deg, var(--auth-grad-from) 0%, var(--auth-grad-via) 50%, var(--auth-grad-to) 100%)"
+  >
     <!-- Decoración de fondo -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
       <div class="absolute -top-40 -right-40 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
       <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
-      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-white/3 rounded-full blur-3xl" />
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-white/3 rounded-full blur-3xl" />
     </div>
 
     <div class="relative w-full max-w-md">
@@ -20,17 +23,30 @@
           </svg>
         </div>
         <h1 class="text-2xl font-bold text-white">Gestión Veterinaria</h1>
-        <p class="text-primary-200 text-sm mt-1">Sistema de administración clínica</p>
+        <p class="text-white/70 text-sm mt-1">Sistema de administración clínica</p>
       </div>
 
       <!-- Contenido del formulario -->
-      <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div class="vg-card rounded-2xl shadow-2xl overflow-hidden">
         <slot />
       </div>
 
-      <p class="text-center text-primary-300 text-xs mt-6">
+      <p class="text-center text-white/50 text-xs mt-6">
         © 2026 GestionVeterinaria · Todos los derechos reservados
       </p>
     </div>
   </div>
 </template>
+
+<style>
+:root {
+  --auth-grad-from: #064e3b;
+  --auth-grad-via: #047857;
+  --auth-grad-to: #0f766e;
+}
+[data-theme="dark"] {
+  --auth-grad-from: #030d08;
+  --auth-grad-via: #041f14;
+  --auth-grad-to: #052e1c;
+}
+</style>

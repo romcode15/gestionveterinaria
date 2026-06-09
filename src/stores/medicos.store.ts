@@ -1,14 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Medico, MedicoFormData } from '@/types'
-import { mockMedicos, mockEspecialidades } from '@/data'
+import type { Medico, MedicoFormData, Especialidad } from '@/types'
+import { medicosService } from '@/services/medicos.service'
 
 export const useMedicosStore = defineStore('medicos', () => {
-  const medicos = ref<Medico[]>([...mockMedicos])
+  const medicos = ref<Medico[]>([])
+  const especialidadesData = ref<Especialidad[]>([])
   const loading = ref(false)
   const searchQuery = ref('')
 
-  const especialidades = computed(() => mockEspecialidades)
+  // ── computed ──────────────────────────────────────────────────────────────
+
+  const especialidades = computed(() => especialidadesData.value)
 
   const medicosFiltrados = computed(() => {
     if (!searchQuery.value.trim()) return medicos.value
@@ -22,43 +25,44 @@ export const useMedicosStore = defineStore('medicos', () => {
     )
   })
 
+  // ── acciones ──────────────────────────────────────────────────────────────
+
+  async function cargar(): Promise<void> {
+    loading.value = true
+    try {
+      ;[medicos.value, especialidadesData.value] = await Promise.all([
+        medicosService.getAll(),
+        medicosService.getAllEspecialidades(),
+      ])
+    } finally {
+      loading.value = false
+    }
+  }
+
   function getById(id: number): Medico | undefined {
     return medicos.value.find((m) => m.id === id)
   }
 
   async function crear(data: MedicoFormData): Promise<Medico> {
     loading.value = true
-    await new Promise((r) => setTimeout(r, 500))
-    const especialidadesSeleccionadas = mockEspecialidades.filter((e) =>
-      data.especialidadesIds.includes(e.id),
-    )
-    const nuevo: Medico = {
-      ...data,
-      id: Math.max(...medicos.value.map((m) => m.id)) + 1,
-      especialidades: especialidadesSeleccionadas,
-      estado: 'activo',
-      createdAt: new Date().toISOString(),
+    try {
+      const nuevo = await medicosService.create(data)
+      medicos.value.push(nuevo)
+      return nuevo
+    } finally {
+      loading.value = false
     }
-    medicos.value.push(nuevo)
-    loading.value = false
-    return nuevo
   }
 
   async function actualizar(id: number, data: Partial<MedicoFormData>): Promise<void> {
     loading.value = true
-    await new Promise((r) => setTimeout(r, 500))
-    const idx = medicos.value.findIndex((m) => m.id === id)
-    if (idx !== -1) {
-      const especialidadesSeleccionadas = data.especialidadesIds
-        ? mockEspecialidades.filter((e) => data.especialidadesIds!.includes(e.id))
-        : medicos.value[idx]!.especialidades
-      medicos.value[idx] = {
-        ...medicos.value[idx]!,
-        ...data,
-        especialidades: especialidadesSeleccionadas,
-      }
+    try {
+      const actualizado = await medicosService.update(id, data)
+      const idx = medicos.value.findIndex((m) => m.id === id)
+      if (idx !== -1) medicos.value[idx] = actualizado
+    } finally {
+      loading.value = false
     }
-    loading.value = false
   }
 
   return {
@@ -67,6 +71,7 @@ export const useMedicosStore = defineStore('medicos', () => {
     searchQuery,
     especialidades,
     medicosFiltrados,
+    cargar,
     getById,
     crear,
     actualizar,

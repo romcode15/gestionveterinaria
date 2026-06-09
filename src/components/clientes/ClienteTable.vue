@@ -17,33 +17,33 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="overflow-x-auto rounded-xl border border-slate-200">
+  <div class="overflow-x-auto rounded-xl vg-table-border">
     <table class="w-full text-sm">
       <thead>
-        <tr class="bg-slate-50 border-b border-slate-200">
-          <th class="px-4 py-3 text-left font-semibold text-slate-600">Cliente</th>
-          <th class="px-4 py-3 text-left font-semibold text-slate-600">Documento</th>
-          <th class="px-4 py-3 text-left font-semibold text-slate-600">Contacto</th>
-          <th class="px-4 py-3 text-center font-semibold text-slate-600">Mascotas</th>
-          <th class="px-4 py-3 text-center font-semibold text-slate-600">Estado</th>
-          <th class="px-4 py-3 text-right font-semibold text-slate-600 w-28">Acciones</th>
+        <tr class="vg-table-head">
+          <th class="px-4 py-3 text-left font-semibold" style="color: var(--text-muted)">Cliente</th>
+          <th class="px-4 py-3 text-left font-semibold" style="color: var(--text-muted)">Documento</th>
+          <th class="px-4 py-3 text-left font-semibold" style="color: var(--text-muted)">Contacto</th>
+          <th class="px-4 py-3 text-center font-semibold" style="color: var(--text-muted)">Mascotas</th>
+          <th class="px-4 py-3 text-center font-semibold" style="color: var(--text-muted)">Estado</th>
+          <th class="px-4 py-3 text-right font-semibold w-28" style="color: var(--text-muted)">Acciones</th>
         </tr>
       </thead>
       <tbody>
         <!-- Loading -->
         <template v-if="props.loading">
-          <tr v-for="i in 5" :key="i" class="border-b border-slate-100">
+          <tr v-for="i in 5" :key="i" class="vg-table-divider">
             <td v-for="j in 6" :key="j" class="px-4 py-3">
-              <div class="h-4 bg-slate-200 rounded animate-pulse" />
+              <div class="h-4 vg-skeleton rounded animate-pulse" />
             </td>
           </tr>
         </template>
 
         <!-- Empty -->
         <tr v-else-if="props.clientes.length === 0">
-          <td colspan="6" class="px-4 py-12 text-center text-slate-400">
+          <td colspan="6" class="px-4 py-12 text-center" style="color: var(--text-muted)">
             <div class="flex flex-col items-center gap-2">
-              <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-10 h-10" style="color: var(--text-disabled)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                   d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
@@ -57,26 +57,26 @@ const emit = defineEmits<{
           v-else
           v-for="cliente in props.clientes"
           :key="cliente.id"
-          class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors"
+          class="vg-table-divider last:border-0 vg-table-row-hover transition-colors"
         >
           <td class="px-4 py-3">
             <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-sm shrink-0">
+              <div class="w-9 h-9 rounded-full vg-client-avatar flex items-center justify-center font-semibold text-sm shrink-0">
                 {{ cliente.nombre[0] }}{{ cliente.apellido[0] }}
               </div>
               <div>
-                <p class="font-medium text-slate-800">{{ cliente.nombre }} {{ cliente.apellido }}</p>
-                <p class="text-xs text-slate-400">{{ cliente.ciudad }}</p>
+                <p class="font-medium" style="color: var(--text-primary)">{{ cliente.nombre }} {{ cliente.apellido }}</p>
+                <p class="text-xs" style="color: var(--text-muted)">{{ cliente.ciudad }}</p>
               </div>
             </div>
           </td>
-          <td class="px-4 py-3 text-slate-600">
-            <span class="text-xs text-slate-400">{{ cliente.tipoDocumento }}</span>
+          <td class="px-4 py-3" style="color: var(--text-secondary)">
+            <span class="text-xs" style="color: var(--text-muted)">{{ cliente.tipoDocumento }}</span>
             <p>{{ cliente.numeroDocumento }}</p>
           </td>
           <td class="px-4 py-3">
-            <p class="text-slate-700">{{ cliente.email }}</p>
-            <p class="text-xs text-slate-400">{{ cliente.telefono }}</p>
+            <p style="color: var(--text-secondary)">{{ cliente.email }}</p>
+            <p class="text-xs" style="color: var(--text-muted)">{{ cliente.telefono }}</p>
           </td>
           <td class="px-4 py-3 text-center">
             <AppBadge :variant="cliente.numeroMascotas > 0 ? 'primary' : 'neutral'">
@@ -92,7 +92,7 @@ const emit = defineEmits<{
             <div class="flex items-center justify-end gap-1">
               <button
                 @click="emit('edit', cliente)"
-                class="p-1.5 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-primary-50 transition-colors"
+                class="p-1.5 rounded-lg transition-colors vg-icon-btn"
                 title="Editar"
                 aria-label="Editar cliente"
               >
@@ -103,12 +103,8 @@ const emit = defineEmits<{
               </button>
               <button
                 @click="emit('toggleEstado', cliente)"
-                :class="[
-                  'p-1.5 rounded-lg transition-colors',
-                  cliente.estado === 'activo'
-                    ? 'text-slate-400 hover:text-danger-600 hover:bg-danger-50'
-                    : 'text-slate-400 hover:text-primary-600 hover:bg-primary-50',
-                ]"
+                class="p-1.5 rounded-lg transition-colors"
+                :class="cliente.estado === 'activo' ? 'vg-icon-btn-danger' : 'vg-icon-btn'"
                 :title="cliente.estado === 'activo' ? 'Inactivar' : 'Activar'"
                 :aria-label="cliente.estado === 'activo' ? 'Inactivar cliente' : 'Activar cliente'"
               >

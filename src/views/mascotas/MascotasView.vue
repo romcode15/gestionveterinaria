@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -16,6 +16,10 @@ import type { Mascota, MascotaFormData } from '@/types'
 
 const mascotasStore = useMascotasStore()
 const clientesStore = useClientesStore()
+
+onMounted(async () => {
+  await Promise.all([mascotasStore.cargar(), clientesStore.cargar()])
+})
 
 const showModal = ref(false)
 const mascotaEditando = ref<Mascota | null>(null)

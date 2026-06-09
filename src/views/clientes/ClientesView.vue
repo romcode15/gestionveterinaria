@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -13,6 +13,8 @@ import { useClientesStore } from '@/stores/clientes.store'
 import type { Cliente, ClienteFormData } from '@/types'
 
 const clientesStore = useClientesStore()
+
+onMounted(() => clientesStore.cargar())
 
 const showModal = ref(false)
 const clienteEditando = ref<Cliente | null>(null)

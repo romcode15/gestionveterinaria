@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppModal from '@/components/ui/AppModal.vue'
@@ -9,11 +9,14 @@ import AgendaSidebar from '@/components/citas/AgendaSidebar.vue'
 import CitaForm from '@/components/citas/CitaForm.vue'
 import { useCitasStore } from '@/stores/citas.store'
 import { useMascotasStore } from '@/stores/mascotas.store'
-import { ref } from 'vue'
 import type { Cita, CitaFormData } from '@/types'
 
 const citasStore = useCitasStore()
 const mascotasStore = useMascotasStore()
+
+onMounted(async () => {
+  await Promise.all([citasStore.cargar(), mascotasStore.cargar()])
+})
 
 const showModal = ref(false)
 const citaEditando = ref<Cita | null>(null)

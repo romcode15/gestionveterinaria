@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1,
+    "tipoDocumento": "CC",
+    "numeroDocumento": "12345678",
+    "nombre": "Ana",
+    "apellido": "Martínez",
+    "email": "ana.martinez@email.com",
+    "telefono": "3001234567",
+    "direccion": "Calle 45 #12-34",
+    "ciudad": "Bogotá",
+    "fechaNacimiento": "1985-03-15",
+    "estado": "activo",
+    "numeroMascotas": 2,
+    "observaciones": "Cliente frecuente",
+    "createdAt": "2025-01-10T10:00:00"
+  },
+  {
+    "id": 2,
+    "tipoDocumento": "CC",
+    "numeroDocumento": "87654321",
+    "nombre": "Pedro",
+    "apellido": "Rodríguez",
+    "email": "pedro.rodriguez@email.com",
+    "telefono": "3109876543",
+    "direccion": "Carrera 7 #89-12",
+    "ciudad": "Medellín",
+    "estado": "activo",
+    "numeroMascotas": 1,
+    "createdAt": "2025-02-20T14:30:00"
+  },
+  {
+    "id": 3,
+    "tipoDocumento": "CE",
+    "numeroDocumento": "55566677",
+    "nombre": "Sofía",
+    "apellido": "Hernández",
+    "email": "sofia.h@email.com",
+    "telefono": "3205556677",
+    "ciudad": "Cali",
+    "estado": "activo",
+    "numeroMascotas": 3,
+    "createdAt": "2025-03-05T09:15:00"
+  },
+  {
+    "id": 4,
+    "tipoDocumento": "CC",
+    "numeroDocumento": "11223344",
+    "nombre": "Luis",
+    "apellido": "Gómez",
+    "email": "luis.gomez@email.com",
+    "telefono": "3151122334",
+    "ciudad": "Bogotá",
+    "estado": "inactivo",
+    "numeroMascotas": 0,
+    "createdAt": "2024-11-15T11:00:00"
+  },
+  {
+    "id": 5,
+    "tipoDocumento": "CC",
+    "numeroDocumento": "99887766",
+    "nombre": "Valentina",
+    "apellido": "Torres",
+    "email": "vale.torres@email.com",
+    "telefono": "3009988776",
+    "direccion": "Av. 68 #45-67",
+    "ciudad": "Bogotá",
+    "estado": "activo",
+    "numeroMascotas": 1,
+    "createdAt": "2025-04-01T16:00:00"
+  }
+]

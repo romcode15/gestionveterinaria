@@ -28,7 +28,7 @@ const sizeClasses = {
 <template>
   <div
     :class="[
-      'rounded-2xl bg-primary-50 flex items-center justify-center shrink-0',
+      'rounded-2xl flex items-center justify-center shrink-0 vg-avatar',
       sizeClasses[props.size],
     ]"
     :aria-label="`${props.nombre} - ${props.especieNombre}`"
@@ -37,3 +37,12 @@ const sizeClasses = {
     {{ emoji }}
   </div>
 </template>
+
+<style>
+.vg-avatar {
+  background-color: rgba(16, 185, 129, 0.12);
+}
+[data-theme="dark"] .vg-avatar {
+  background-color: rgba(16, 185, 129, 0.15);
+}
+</style>

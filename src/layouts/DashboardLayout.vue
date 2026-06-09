@@ -2,11 +2,13 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
+import { useThemeStore } from '@/stores/theme.store'
 import AppBadge from '@/components/ui/AppBadge.vue'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const themeStore = useThemeStore()
 
 const sidebarOpen = ref(true)
 
@@ -18,7 +20,8 @@ interface NavItem {
   badge?: number
 }
 
-const navItems: NavItem[] = [
+// Navegación para roles staff (admin, veterinario, recepcionista)
+const navItemsStaff: NavItem[] = [
   {
     label: 'Dashboard',
     icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
@@ -56,9 +59,26 @@ const navItems: NavItem[] = [
   },
 ]
 
-const visibleNavItems = computed(() =>
-  navItems.filter((item) => !item.permiso || authStore.hasPermiso(item.permiso)),
-)
+// Navegación para clientes: solo su portal y sus citas
+const navItemsCliente: NavItem[] = [
+  {
+    label: 'Mi portal',
+    icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+    to: '/mi-portal',
+    permiso: 'cliente.mis-mascotas',
+  },
+  {
+    label: 'Mis citas',
+    icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+    to: '/mis-citas',
+    permiso: 'cliente.mis-citas',
+  },
+]
+
+const visibleNavItems = computed(() => {
+  const items = authStore.isCliente ? navItemsCliente : navItemsStaff
+  return items.filter((item) => !item.permiso || authStore.hasPermiso(item.permiso))
+})
 
 function isActive(to: string): boolean {
   return route.path === to || route.path.startsWith(to + '/')
@@ -81,22 +101,27 @@ const rolLabel = computed(() => {
     veterinario: 'Veterinario',
     recepcionista: 'Recepcionista',
     auxiliar: 'Auxiliar',
+    cliente: 'Cliente',
   }
   return rol ? (labels[rol] ?? rol) : ''
 })
 </script>
 
 <template>
-  <div class="flex h-screen bg-slate-50 overflow-hidden">
+  <div class="flex h-screen overflow-hidden" style="background-color: var(--bg-base)">
+
     <!-- Sidebar -->
     <aside
       :class="[
-        'flex flex-col bg-primary-900 text-white transition-all duration-300 shrink-0',
+        'vg-sidebar flex flex-col transition-all duration-300 shrink-0',
         sidebarOpen ? 'w-64' : 'w-16',
       ]"
     >
       <!-- Logo -->
-      <div class="flex items-center gap-3 px-4 py-5 border-b border-primary-800">
+      <div
+        class="flex items-center gap-3 px-4 py-5 vg-sidebar-border"
+        style="border-bottom-width: 1px; border-bottom-style: solid"
+      >
         <div class="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center shrink-0">
           <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -104,7 +129,7 @@ const rolLabel = computed(() => {
           </svg>
         </div>
         <Transition name="fade">
-          <span v-if="sidebarOpen" class="font-bold text-sm leading-tight">
+          <span v-if="sidebarOpen" class="font-bold text-sm leading-tight text-white">
             Gestión<br />Veterinaria
           </span>
         </Transition>
@@ -119,8 +144,8 @@ const rolLabel = computed(() => {
               :class="[
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
                 isActive(item.to)
-                  ? 'bg-primary-600 text-white shadow-sm'
-                  : 'text-primary-200 hover:bg-primary-800 hover:text-white',
+                  ? 'vg-sidebar-item-active'
+                  : 'vg-sidebar-text vg-sidebar-item-hover',
               ]"
               :title="!sidebarOpen ? item.label : undefined"
             >
@@ -135,23 +160,74 @@ const rolLabel = computed(() => {
         </ul>
       </nav>
 
-      <!-- User section -->
-      <div class="border-t border-primary-800 p-3">
+      <!-- Toggle tema + User section -->
+      <div
+        class="vg-sidebar-border p-3 space-y-2"
+        style="border-top-width: 1px; border-top-style: solid"
+      >
+        <!-- Toggle tema (solo cuando sidebar abierto) -->
+        <Transition name="fade">
+          <div
+            v-if="sidebarOpen"
+            class="flex items-center justify-between px-1 py-1"
+          >
+            <span class="text-xs vg-sidebar-text flex items-center gap-2">
+              <svg v-if="themeStore.theme === 'light'" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 3v1m0 16v1m8.66-13H20m-17 0H2m14.95 9.07l-.71-.71M7.76 7.76l-.71-.71M19.07 19.07l-.71-.71M5.64 5.64l-.71-.71M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+              {{ themeStore.theme === 'light' ? 'Claro' : 'Oscuro' }}
+            </span>
+            <button
+              class="theme-toggle"
+              role="switch"
+              :aria-checked="themeStore.theme === 'dark'"
+              aria-label="Cambiar tema"
+              @click="themeStore.toggle()"
+            >
+              <span class="theme-toggle-thumb" />
+            </button>
+          </div>
+        </Transition>
+
+        <!-- Icono tema cuando sidebar cerrado -->
+        <button
+          v-if="!sidebarOpen"
+          @click="themeStore.toggle()"
+          class="w-full flex items-center justify-center p-2 rounded-xl vg-sidebar-text vg-sidebar-item-hover transition-colors"
+          :aria-label="themeStore.theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+          :title="themeStore.theme === 'dark' ? 'Modo claro' : 'Modo oscuro'"
+        >
+          <svg v-if="themeStore.theme === 'light'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+              d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+          <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+              d="M12 3v1m0 16v1m8.66-13H20m-17 0H2m14.95 9.07l-.71-.71M7.76 7.76l-.71-.71M19.07 19.07l-.71-.71M5.64 5.64l-.71-.71M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+
+        <!-- User -->
         <div class="flex items-center gap-3">
-          <div class="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
+          <div class="w-8 h-8 vg-sidebar-user-bg rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0">
             {{ userInitials }}
           </div>
           <Transition name="fade">
             <div v-if="sidebarOpen" class="flex-1 min-w-0">
               <p class="text-sm font-medium text-white truncate">{{ authStore.nombreCompleto }}</p>
-              <p class="text-xs text-primary-300 truncate">{{ rolLabel }}</p>
+              <p class="text-xs vg-sidebar-text truncate">{{ rolLabel }}</p>
             </div>
           </Transition>
           <Transition name="fade">
             <button
               v-if="sidebarOpen"
               @click="handleLogout"
-              class="p-1.5 rounded-lg text-primary-300 hover:text-white hover:bg-primary-700 transition-colors"
+              class="p-1.5 rounded-lg vg-sidebar-text hover:text-white vg-sidebar-item-hover transition-colors"
               title="Cerrar sesión"
               aria-label="Cerrar sesión"
             >
@@ -168,10 +244,11 @@ const rolLabel = computed(() => {
     <!-- Main content -->
     <div class="flex-1 flex flex-col overflow-hidden">
       <!-- Top bar -->
-      <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center gap-3 shrink-0">
+      <header class="vg-topbar px-4 sm:px-6 py-3 flex items-center gap-3 shrink-0">
         <button
           @click="sidebarOpen = !sidebarOpen"
-          class="p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0"
+          class="p-2 rounded-lg transition-colors shrink-0"
+          style="color: var(--text-muted)"
           :aria-label="sidebarOpen ? 'Colapsar menú' : 'Expandir menú'"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,7 +261,7 @@ const rolLabel = computed(() => {
           <slot name="header" />
         </div>
 
-        <!-- Badge de rol: se oculta en pantallas muy pequeñas -->
+        <!-- Badge de rol -->
         <div class="hidden xs:flex sm:flex items-center gap-2 shrink-0">
           <AppBadge variant="success" dot>
             {{ rolLabel }}

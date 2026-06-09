@@ -16,7 +16,7 @@ const emit = defineEmits<{ dismiss: [] }>()
 
 const config: Record<AlertType, { bg: string; border: string; icon: string; iconColor: string; textColor: string }> = {
   success: {
-    bg: 'bg-primary-50',
+    bg: 'bg-primary-50 dark:bg-primary-900/20',
     border: 'border-primary-200',
     icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
     iconColor: 'text-primary-500',
@@ -31,10 +31,10 @@ const config: Record<AlertType, { bg: string; border: string; icon: string; icon
   },
   error: {
     bg: 'bg-danger-50',
-    border: 'border-danger-200',
+    border: 'border-danger-100',
     icon: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
     iconColor: 'text-danger-500',
-    textColor: 'text-danger-800',
+    textColor: 'text-danger-700',
   },
   info: {
     bg: 'bg-blue-50',

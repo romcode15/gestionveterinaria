@@ -25,8 +25,10 @@ const variantClasses: Record<Variant, string> = {
     'bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 focus:ring-primary-500',
   secondary:
     'bg-secondary-600 text-white hover:bg-secondary-700 active:bg-secondary-800 focus:ring-secondary-500',
-  danger: 'bg-danger-500 text-white hover:bg-danger-600 active:bg-danger-700 focus:ring-danger-400',
-  ghost: 'bg-transparent text-slate-700 hover:bg-slate-100 active:bg-slate-200 focus:ring-slate-400',
+  danger:
+    'bg-danger-500 text-white hover:bg-danger-600 active:bg-danger-700 focus:ring-danger-400',
+  ghost:
+    'bg-transparent hover:bg-[var(--bg-surface-2)] active:bg-[var(--bg-surface-3)] focus:ring-[var(--border-strong)]',
   outline:
     'bg-transparent border border-primary-600 text-primary-600 hover:bg-primary-50 focus:ring-primary-500',
   warning:
@@ -51,7 +53,10 @@ const sizeClasses: Record<Size, string> = {
       variantClasses[props.variant],
       sizeClasses[props.size],
       props.fullWidth ? 'w-full' : '',
+      // ghost necesita color de texto dinámico
+      props.variant === 'ghost' ? 'text-[var(--text-secondary)]' : '',
     ]"
+    :style="props.variant === 'ghost' ? 'color: var(--text-secondary)' : ''"
   >
     <svg
       v-if="props.loading"

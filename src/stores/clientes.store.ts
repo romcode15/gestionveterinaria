@@ -1,13 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Cliente, ClienteFormData } from '@/types'
-import { mockClientes } from '@/data'
+import { clientesService } from '@/services/clientes.service'
+import { authService } from '@/services/auth.service'
 
 export const useClientesStore = defineStore('clientes', () => {
-  const clientes = ref<Cliente[]>([...mockClientes])
+  const clientes = ref<Cliente[]>([])
   const loading = ref(false)
   const searchQuery = ref('')
   const filtroEstado = ref<'todos' | 'activo' | 'inactivo'>('todos')
+
+  // ── computed ──────────────────────────────────────────────────────────────
 
   const clientesFiltrados = computed(() => {
     let result = clientes.value
@@ -28,40 +31,54 @@ export const useClientesStore = defineStore('clientes', () => {
     return result
   })
 
+  // ── acciones ──────────────────────────────────────────────────────────────
+
+  async function cargar(): Promise<void> {
+    loading.value = true
+    try {
+      clientes.value = await clientesService.getAll()
+    } finally {
+      loading.value = false
+    }
+  }
+
   function getById(id: number): Cliente | undefined {
     return clientes.value.find((c) => c.id === id)
   }
 
   async function crear(data: ClienteFormData): Promise<Cliente> {
     loading.value = true
-    await new Promise((r) => setTimeout(r, 500))
-    const nuevo: Cliente = {
-      ...data,
-      id: Math.max(...clientes.value.map((c) => c.id)) + 1,
-      estado: 'activo',
-      numeroMascotas: 0,
-      createdAt: new Date().toISOString(),
+    try {
+      const nuevo = await clientesService.create(data)
+      clientes.value.push(nuevo)
+      // Crear automáticamente el usuario con rol cliente
+      authService.crearUsuarioCliente({
+        nombre: nuevo.nombre,
+        apellido: nuevo.apellido,
+        email: nuevo.email,
+        clienteId: nuevo.id,
+      })
+      return nuevo
+    } finally {
+      loading.value = false
     }
-    clientes.value.push(nuevo)
-    loading.value = false
-    return nuevo
   }
 
   async function actualizar(id: number, data: Partial<ClienteFormData>): Promise<void> {
     loading.value = true
-    await new Promise((r) => setTimeout(r, 500))
-    const idx = clientes.value.findIndex((c) => c.id === id)
-    if (idx !== -1) {
-      clientes.value[idx] = { ...clientes.value[idx]!, ...data }
+    try {
+      const actualizado = await clientesService.update(id, data)
+      const idx = clientes.value.findIndex((c) => c.id === id)
+      if (idx !== -1) clientes.value[idx] = actualizado
+    } finally {
+      loading.value = false
     }
-    loading.value = false
   }
 
   async function toggleEstado(id: number): Promise<void> {
-    const cliente = clientes.value.find((c) => c.id === id)
-    if (cliente) {
-      cliente.estado = cliente.estado === 'activo' ? 'inactivo' : 'activo'
-    }
+    const actualizado = await clientesService.toggleEstado(id)
+    const idx = clientes.value.findIndex((c) => c.id === id)
+    if (idx !== -1) clientes.value[idx] = actualizado
   }
 
   return {
@@ -70,6 +87,7 @@ export const useClientesStore = defineStore('clientes', () => {
     searchQuery,
     filtroEstado,
     clientesFiltrados,
+    cargar,
     getById,
     crear,
     actualizar,

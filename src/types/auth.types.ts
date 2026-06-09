@@ -1,4 +1,4 @@
-export type RoleName = 'admin' | 'veterinario' | 'recepcionista' | 'auxiliar'
+export type RoleName = 'admin' | 'veterinario' | 'recepcionista' | 'auxiliar' | 'cliente'
 
 export interface Permiso {
   id: number
@@ -22,6 +22,7 @@ export interface Usuario {
   apellido: string
   activo: boolean
   roles: Rol[]
+  clienteId: number | null
   avatar?: string
   ultimoAcceso?: string
 }

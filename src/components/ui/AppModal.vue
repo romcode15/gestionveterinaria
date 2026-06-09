@@ -53,7 +53,7 @@ const sizeClasses = {
       >
         <!-- Backdrop -->
         <div
-          class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          class="absolute inset-0 bg-black/60 backdrop-blur-sm"
           @click="close"
           aria-hidden="true"
         />
@@ -62,23 +62,30 @@ const sizeClasses = {
         <Transition name="slide-up">
           <div
             v-if="props.modelValue"
-            :class="['relative w-full bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh]', sizeClasses[props.size]]"
+            :class="[
+              'relative w-full vg-modal-panel rounded-2xl shadow-2xl flex flex-col max-h-[90vh]',
+              sizeClasses[props.size],
+            ]"
           >
             <!-- Header -->
             <div
               v-if="props.title || $slots.header"
-              class="flex items-center justify-between px-6 py-4 border-b border-slate-100"
+              class="flex items-center justify-between px-6 py-4"
+              style="border-bottom: 1px solid var(--border-default)"
             >
               <slot name="header">
-                <h2 id="modal-title" class="text-lg font-semibold text-slate-800">
+                <h2 id="modal-title" class="text-lg font-semibold" style="color: var(--text-primary)">
                   {{ props.title }}
                 </h2>
               </slot>
               <button
                 v-if="props.closable"
                 @click="close"
-                class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                class="p-1.5 rounded-lg transition-colors"
+                style="color: var(--text-muted)"
                 aria-label="Cerrar modal"
+                onmouseover="this.style.backgroundColor='var(--bg-surface-2)';this.style.color='var(--text-secondary)'"
+                onmouseout="this.style.backgroundColor='';this.style.color='var(--text-muted)'"
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -94,7 +101,8 @@ const sizeClasses = {
             <!-- Footer -->
             <div
               v-if="$slots.footer"
-              class="px-6 py-4 border-t border-slate-100 flex items-center justify-end gap-3"
+              class="px-6 py-4 flex items-center justify-end gap-3"
+              style="border-top: 1px solid var(--border-default)"
             >
               <slot name="footer" />
             </div>

@@ -1,19 +1,23 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Mascota, MascotaFormData } from '@/types'
-import { mockMascotas, mockEspecies, mockRazas } from '@/data'
+import type { Mascota, MascotaFormData, Especie, Raza } from '@/types'
+import { mascotasService } from '@/services/mascotas.service'
 
 export const useMascotasStore = defineStore('mascotas', () => {
-  const mascotas = ref<Mascota[]>([...mockMascotas])
+  const mascotas = ref<Mascota[]>([])
+  const especiesData = ref<Especie[]>([])
+  const razasData = ref<Raza[]>([])
   const loading = ref(false)
   const searchQuery = ref('')
   const filtroEspecieId = ref<number | null>(null)
 
-  const especies = computed(() => mockEspecies)
-  const razas = computed(() => mockRazas)
+  // ── computed ──────────────────────────────────────────────────────────────
+
+  const especies = computed(() => especiesData.value)
+  const razas = computed(() => razasData.value)
 
   const razasPorEspecie = computed(() => (especieId: number) =>
-    mockRazas.filter((r) => r.especieId === especieId),
+    razasData.value.filter((r) => r.especieId === especieId),
   )
 
   const mascotasFiltradas = computed(() => {
@@ -38,43 +42,45 @@ export const useMascotasStore = defineStore('mascotas', () => {
     mascotas.value.filter((m) => m.clienteId === clienteId && m.estado === 'activo'),
   )
 
+  // ── acciones ──────────────────────────────────────────────────────────────
+
+  async function cargar(): Promise<void> {
+    loading.value = true
+    try {
+      ;[mascotas.value, especiesData.value, razasData.value] = await Promise.all([
+        mascotasService.getAll(),
+        mascotasService.getAllEspecies(),
+        mascotasService.getAllRazas(),
+      ])
+    } finally {
+      loading.value = false
+    }
+  }
+
   function getById(id: number): Mascota | undefined {
     return mascotas.value.find((m) => m.id === id)
   }
 
   async function crear(data: MascotaFormData): Promise<Mascota> {
     loading.value = true
-    await new Promise((r) => setTimeout(r, 500))
-    const especie = mockEspecies.find((e) => e.id === data.especieId)!
-    const raza = mockRazas.find((r) => r.id === data.razaId)!
-    const nuevo: Mascota = {
-      ...data,
-      id: Math.max(...mascotas.value.map((m) => m.id)) + 1,
-      especie,
-      raza,
-      clienteNombre: '',
-      estado: 'activo',
-      createdAt: new Date().toISOString(),
+    try {
+      const nueva = await mascotasService.create(data)
+      mascotas.value.push(nueva)
+      return nueva
+    } finally {
+      loading.value = false
     }
-    mascotas.value.push(nuevo)
-    loading.value = false
-    return nuevo
   }
 
   async function actualizar(id: number, data: Partial<MascotaFormData>): Promise<void> {
     loading.value = true
-    await new Promise((r) => setTimeout(r, 500))
-    const idx = mascotas.value.findIndex((m) => m.id === id)
-    if (idx !== -1) {
-      const especie = data.especieId
-        ? mockEspecies.find((e) => e.id === data.especieId)!
-        : mascotas.value[idx]!.especie
-      const raza = data.razaId
-        ? mockRazas.find((r) => r.id === data.razaId)!
-        : mascotas.value[idx]!.raza
-      mascotas.value[idx] = { ...mascotas.value[idx]!, ...data, especie, raza }
+    try {
+      const actualizada = await mascotasService.update(id, data)
+      const idx = mascotas.value.findIndex((m) => m.id === id)
+      if (idx !== -1) mascotas.value[idx] = actualizada
+    } finally {
+      loading.value = false
     }
-    loading.value = false
   }
 
   return {
@@ -87,6 +93,7 @@ export const useMascotasStore = defineStore('mascotas', () => {
     razasPorEspecie,
     mascotasFiltradas,
     mascotasPorCliente,
+    cargar,
     getById,
     crear,
     actualizar,

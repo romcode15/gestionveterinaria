@@ -15,33 +15,35 @@ const emit = defineEmits<{
 
 const initials = `${props.medico.nombre[0] ?? ''}${props.medico.apellido[0] ?? ''}`.toUpperCase()
 
-const avatarColors = [
-  'bg-primary-100 text-primary-700',
-  'bg-secondary-100 text-secondary-700',
-  'bg-blue-100 text-blue-700',
-  'bg-purple-100 text-purple-700',
+// Paleta de avatares que funciona en light y dark
+const avatarPalette = [
+  { bg: 'rgba(16,185,129,0.15)',  color: '#059669' },
+  { bg: 'rgba(20,184,166,0.15)',  color: '#0d9488' },
+  { bg: 'rgba(59,130,246,0.15)',  color: '#2563eb' },
+  { bg: 'rgba(168,85,247,0.15)',  color: '#7c3aed' },
 ]
-const colorClass = avatarColors[props.medico.id % avatarColors.length] ?? avatarColors[0]!
+const palette = avatarPalette[props.medico.id % avatarPalette.length]!
 </script>
 
 <template>
-  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5 hover:shadow-md transition-shadow">
+  <div class="vg-card rounded-2xl p-4 sm:p-5 hover:shadow-md transition-shadow">
 
-    <!-- Fila superior: avatar + nombre + badge -->
+    <!-- Avatar + nombre + badge -->
     <div class="flex items-start gap-3">
-      <!-- Avatar -->
-      <div :class="['w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-base sm:text-lg font-bold shrink-0', colorClass]">
+      <div
+        class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-base sm:text-lg font-bold shrink-0"
+        :style="{ backgroundColor: palette.bg, color: palette.color }"
+      >
         {{ initials }}
       </div>
 
-      <!-- Nombre, licencia y badge -->
       <div class="flex-1 min-w-0">
         <div class="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
           <div class="min-w-0">
-            <h3 class="font-semibold text-slate-800 text-sm sm:text-base leading-tight truncate">
+            <h3 class="font-semibold text-sm sm:text-base leading-tight truncate" style="color: var(--text-primary)">
               {{ props.medico.nombre }} {{ props.medico.apellido }}
             </h3>
-            <p class="text-xs text-slate-400 mt-0.5 truncate">Lic. {{ props.medico.numeroLicencia }}</p>
+            <p class="text-xs mt-0.5 truncate" style="color: var(--text-muted)">Lic. {{ props.medico.numeroLicencia }}</p>
           </div>
           <AppBadge :variant="props.medico.disponible ? 'success' : 'neutral'" dot class="shrink-0">
             {{ props.medico.disponible ? 'Disponible' : 'No disponible' }}
@@ -55,14 +57,14 @@ const colorClass = avatarColors[props.medico.id % avatarColors.length] ?? avatar
       <span
         v-for="esp in props.medico.especialidades"
         :key="esp.id"
-        class="px-2 py-0.5 bg-primary-50 text-primary-700 text-xs rounded-full font-medium"
+        class="px-2 py-0.5 text-xs rounded-full font-medium vg-esp-tag"
       >
         {{ esp.nombre }}
       </span>
     </div>
 
-    <!-- Contacto: columna en móvil, fila en sm+ -->
-    <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 mt-3 text-xs text-slate-500">
+    <!-- Contacto -->
+    <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 mt-3 text-xs" style="color: var(--text-muted)">
       <span class="flex items-center gap-1 min-w-0">
         <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -80,7 +82,10 @@ const colorClass = avatarColors[props.medico.id % avatarColors.length] ?? avatar
     </div>
 
     <!-- Actions -->
-    <div class="flex justify-end mt-4 pt-4 border-t border-slate-100">
+    <div
+      class="flex justify-end mt-4 pt-4"
+      style="border-top: 1px solid var(--border-default)"
+    >
       <AppButton variant="outline" size="sm" @click="emit('edit', props.medico)">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -91,3 +96,14 @@ const colorClass = avatarColors[props.medico.id % avatarColors.length] ?? avatar
     </div>
   </div>
 </template>
+
+<style>
+.vg-esp-tag {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+[data-theme="dark"] .vg-esp-tag {
+  background-color: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+}
+</style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -12,6 +12,8 @@ import { useMedicosStore } from '@/stores/medicos.store'
 import type { Medico, MedicoFormData } from '@/types'
 
 const medicosStore = useMedicosStore()
+
+onMounted(() => medicosStore.cargar())
 
 const showModal = ref(false)
 const medicoEditando = ref<Medico | null>(null)

@@ -14,21 +14,12 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const variantClasses: Record<BadgeVariant, string> = {
-  success: 'bg-primary-100 text-primary-700',
-  warning: 'bg-accent-100 text-accent-700',
-  danger: 'bg-danger-100 text-danger-700',
-  info: 'bg-blue-100 text-blue-700',
-  neutral: 'bg-slate-100 text-slate-600',
-  primary: 'bg-primary-600 text-white',
-}
-
-const dotClasses: Record<BadgeVariant, string> = {
-  success: 'bg-primary-500',
-  warning: 'bg-accent-500',
-  danger: 'bg-danger-500',
-  info: 'bg-blue-500',
-  neutral: 'bg-slate-400',
-  primary: 'bg-white',
+  success: 'badge-success',
+  warning: 'badge-warning',
+  danger:  'badge-danger',
+  info:    'badge-info',
+  neutral: 'badge-neutral',
+  primary: 'badge-primary',
 }
 
 const sizeClasses = {
@@ -40,14 +31,14 @@ const sizeClasses = {
 <template>
   <span
     :class="[
-      'inline-flex items-center gap-1.5 font-medium rounded-full',
+      'inline-flex items-center gap-1.5 font-medium rounded-full transition-colors',
       variantClasses[props.variant],
       sizeClasses[props.size],
     ]"
   >
     <span
       v-if="props.dot"
-      :class="['w-1.5 h-1.5 rounded-full shrink-0', dotClasses[props.variant]]"
+      class="w-1.5 h-1.5 rounded-full shrink-0 badge-dot"
       aria-hidden="true"
     />
     <slot />

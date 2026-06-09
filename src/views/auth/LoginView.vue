@@ -10,30 +10,16 @@ import AppAlert from '@/components/ui/AppAlert.vue'
 const router = useRouter()
 const authStore = useAuthStore()
 
-const form = reactive({
-  username: '',
-  password: '',
-})
-
+const form = reactive({ username: '', password: '' })
 const showPassword = ref(false)
-
-const errors = reactive({
-  username: '',
-  password: '',
-})
+const errors = reactive({ username: '', password: '' })
 
 function validate(): boolean {
   errors.username = ''
   errors.password = ''
   let valid = true
-  if (!form.username.trim()) {
-    errors.username = 'El usuario es requerido'
-    valid = false
-  }
-  if (!form.password) {
-    errors.password = 'La contraseña es requerida'
-    valid = false
-  }
+  if (!form.username.trim()) { errors.username = 'El usuario es requerido'; valid = false }
+  if (!form.password) { errors.password = 'La contraseña es requerida'; valid = false }
   return valid
 }
 
@@ -48,11 +34,10 @@ async function handleSubmit() {
   }
 }
 
-// Credenciales de demo
 const demoUsers = [
-  { username: 'admin', password: 'admin123', label: 'Administrador' },
-  { username: 'dra.garcia', password: 'vet123', label: 'Veterinaria' },
-  { username: 'recepcion', password: 'rec123', label: 'Recepcionista' },
+  { username: 'admin',      password: 'admin123', label: 'Administrador' },
+  { username: 'dra.garcia', password: 'vet123',   label: 'Veterinaria' },
+  { username: 'recepcion',  password: 'rec123',   label: 'Recepcionista' },
 ]
 
 function fillDemo(username: string, password: string) {
@@ -66,11 +51,17 @@ function fillDemo(username: string, password: string) {
   <AuthLayout>
     <div class="p-8">
       <div class="mb-6">
-        <h2 class="text-xl font-bold text-slate-800">Iniciar sesión</h2>
-        <p class="text-slate-500 text-sm mt-1">Ingresa tus credenciales para continuar</p>
+        <h2 class="text-xl font-bold" style="color: var(--text-primary)">Iniciar sesión</h2>
+        <p class="text-sm mt-1" style="color: var(--text-muted)">Ingresa tus credenciales para continuar</p>
       </div>
 
-      <AppAlert v-if="authStore.error" type="error" dismissible @dismiss="authStore.clearError()" class="mb-4">
+      <AppAlert
+        v-if="authStore.error"
+        type="error"
+        dismissible
+        @dismiss="authStore.clearError()"
+        class="mb-4"
+      >
         {{ authStore.error }}
       </AppAlert>
 
@@ -85,8 +76,9 @@ function fillDemo(username: string, password: string) {
           autocomplete="username"
         />
 
+        <!-- Password con toggle manual -->
         <div class="flex flex-col gap-1">
-          <label for="password" class="text-sm font-medium text-slate-700">
+          <label for="password" class="text-sm font-medium" style="color: var(--text-secondary)">
             Contraseña <span class="text-danger-500" aria-hidden="true">*</span>
           </label>
           <div class="relative">
@@ -98,17 +90,18 @@ function fillDemo(username: string, password: string) {
               autocomplete="current-password"
               :aria-invalid="!!errors.password"
               :class="[
-                'w-full px-3 py-2 pr-10 rounded-lg border text-sm transition-colors',
+                'vg-input w-full px-3 py-2 pr-10 rounded-lg text-sm transition-colors',
                 'focus:outline-none focus:ring-2 focus:ring-offset-0',
                 errors.password
                   ? 'border-danger-400 focus:border-danger-400 focus:ring-danger-300'
-                  : 'border-slate-300 focus:border-primary-500 focus:ring-primary-200',
+                  : 'focus:border-primary-500 focus:ring-primary-200',
               ]"
             />
             <button
               type="button"
               @click="showPassword = !showPassword"
-              class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+              class="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+              style="color: var(--text-muted)"
               :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
             >
               <svg v-if="!showPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,7 +116,7 @@ function fillDemo(username: string, password: string) {
               </svg>
             </button>
           </div>
-          <p v-if="errors.password" class="text-xs text-danger-600" role="alert">{{ errors.password }}</p>
+          <p v-if="errors.password" class="text-xs text-danger-500" role="alert">{{ errors.password }}</p>
         </div>
 
         <AppButton type="submit" :loading="authStore.loading" full-width size="lg" class="mt-2">
@@ -132,16 +125,14 @@ function fillDemo(username: string, password: string) {
       </form>
 
       <!-- Demo credentials -->
-      <div class="mt-6 pt-6 border-t border-slate-100">
-        <p class="text-xs text-slate-500 text-center mb-3">Usuarios de demostración</p>
+      <div class="mt-6 pt-6" style="border-top: 1px solid var(--border-default)">
+        <p class="text-xs text-center mb-3" style="color: var(--text-muted)">Usuarios de demostración</p>
         <div class="grid grid-cols-3 gap-2">
           <button
             v-for="demo in demoUsers"
             :key="demo.username"
             @click="fillDemo(demo.username, demo.password)"
-            class="text-xs px-2 py-2 rounded-lg border border-slate-200 text-slate-600
-                   hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700
-                   transition-colors text-center"
+            class="text-xs px-2 py-2 rounded-lg transition-colors text-center vg-demo-btn"
           >
             {{ demo.label }}
           </button>
@@ -150,3 +141,21 @@ function fillDemo(username: string, password: string) {
     </div>
   </AuthLayout>
 </template>
+
+<style>
+.vg-demo-btn {
+  border: 1px solid var(--border-default);
+  color: var(--text-muted);
+  background: transparent;
+}
+.vg-demo-btn:hover {
+  border-color: #34d399;
+  background-color: rgba(5, 150, 105, 0.08);
+  color: #059669;
+}
+[data-theme="dark"] .vg-demo-btn:hover {
+  border-color: #34d399;
+  background-color: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+}
+</style>

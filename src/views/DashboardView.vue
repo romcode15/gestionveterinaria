@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import AppCard from '@/components/ui/AppCard.vue'
@@ -17,6 +17,15 @@ const clientesStore = useClientesStore()
 const mascotasStore = useMascotasStore()
 const citasStore = useCitasStore()
 const medicosStore = useMedicosStore()
+
+onMounted(async () => {
+  await Promise.all([
+    clientesStore.cargar(),
+    mascotasStore.cargar(),
+    citasStore.cargar(),
+    medicosStore.cargar(),
+  ])
+})
 
 const stats = computed(() => [
   {

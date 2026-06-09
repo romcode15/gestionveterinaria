@@ -1,18 +1,22 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Cita, CitaFormData, EstadoCita } from '@/types'
-import { mockCitas, mockTiposCita } from '@/data'
-import { mockMedicos } from '@/data'
+import type { Cita, CitaFormData, EstadoCita, TipoCita, Medico } from '@/types'
+import { citasService } from '@/services/citas.service'
+import { medicosService } from '@/services/medicos.service'
 
 export const useCitasStore = defineStore('citas', () => {
-  const citas = ref<Cita[]>([...mockCitas])
+  const citas = ref<Cita[]>([])
+  const tiposCitaData = ref<TipoCita[]>([])
+  const medicosData = ref<Medico[]>([])
   const loading = ref(false)
   const fechaSeleccionada = ref<string>(new Date().toISOString().split('T')[0]!)
   const filtroMedicoId = ref<number | null>(null)
   const filtroEstado = ref<EstadoCita | 'todos'>('todos')
 
-  const tiposCita = computed(() => mockTiposCita)
-  const medicos = computed(() => mockMedicos)
+  // ── computed ──────────────────────────────────────────────────────────────
+
+  const tiposCita = computed(() => tiposCitaData.value)
+  const medicos = computed(() => medicosData.value)
 
   const citasPorFecha = computed(() => (fecha: string) =>
     citas.value.filter((c) => c.fecha === fecha),
@@ -46,55 +50,64 @@ export const useCitasStore = defineStore('citas', () => {
     canceladas: citas.value.filter((c) => c.estado === 'cancelada').length,
   }))
 
+  // ── acciones ──────────────────────────────────────────────────────────────
+
+  async function cargar(): Promise<void> {
+    loading.value = true
+    try {
+      ;[citas.value, tiposCitaData.value, medicosData.value] = await Promise.all([
+        citasService.getAll(),
+        citasService.getAllTiposCita(),
+        medicosService.getAll(),
+      ])
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Carga solo las citas del cliente logueado (para el portal cliente)
+  async function cargarMisCitas(clienteId: number): Promise<void> {
+    loading.value = true
+    try {
+      ;[citas.value, tiposCitaData.value] = await Promise.all([
+        citasService.getByClienteId(clienteId),
+        citasService.getAllTiposCita(),
+      ])
+    } finally {
+      loading.value = false
+    }
+  }
+
   function getById(id: number): Cita | undefined {
     return citas.value.find((c) => c.id === id)
   }
 
-  function calcularHoraFin(horaInicio: string, duracionMinutos: number): string {
-    const [h, m] = horaInicio.split(':').map(Number)
-    const totalMinutos = (h ?? 0) * 60 + (m ?? 0) + duracionMinutos
-    const hFin = Math.floor(totalMinutos / 60)
-    const mFin = totalMinutos % 60
-    return `${String(hFin).padStart(2, '0')}:${String(mFin).padStart(2, '0')}`
-  }
-
   async function crear(data: CitaFormData): Promise<Cita> {
     loading.value = true
-    await new Promise((r) => setTimeout(r, 500))
-    const tipoCita = mockTiposCita.find((t) => t.id === data.tipoCitaId)!
-    const medico = mockMedicos.find((m) => m.id === data.medicoId)!
-    const nueva: Cita = {
-      ...data,
-      id: Math.max(...citas.value.map((c) => c.id)) + 1,
-      horaFin: calcularHoraFin(data.horaInicio, tipoCita.duracionMinutos),
-      estado: 'pendiente',
-      tipoCita,
-      medicoNombre: `${medico.nombre} ${medico.apellido}`,
-      mascotaNombre: '',
-      clienteId: 0,
-      clienteNombre: '',
-      createdAt: new Date().toISOString(),
+    try {
+      const nueva = await citasService.create(data)
+      citas.value.push(nueva)
+      return nueva
+    } finally {
+      loading.value = false
     }
-    citas.value.push(nueva)
-    loading.value = false
-    return nueva
   }
 
   async function actualizar(id: number, data: Partial<CitaFormData>): Promise<void> {
     loading.value = true
-    await new Promise((r) => setTimeout(r, 500))
-    const idx = citas.value.findIndex((c) => c.id === id)
-    if (idx !== -1) {
-      citas.value[idx] = { ...citas.value[idx]!, ...data }
+    try {
+      const actualizada = await citasService.update(id, data)
+      const idx = citas.value.findIndex((c) => c.id === id)
+      if (idx !== -1) citas.value[idx] = actualizada
+    } finally {
+      loading.value = false
     }
-    loading.value = false
   }
 
   async function cambiarEstado(id: number, estado: EstadoCita): Promise<void> {
-    const cita = citas.value.find((c) => c.id === id)
-    if (cita) {
-      cita.estado = estado
-    }
+    const actualizada = await citasService.changeStatus(id, estado)
+    const idx = citas.value.findIndex((c) => c.id === id)
+    if (idx !== -1) citas.value[idx] = actualizada
   }
 
   return {
@@ -109,6 +122,8 @@ export const useCitasStore = defineStore('citas', () => {
     citasFiltradas,
     citasHoy,
     estadisticas,
+    cargar,
+    cargarMisCitas,
     getById,
     crear,
     actualizar,

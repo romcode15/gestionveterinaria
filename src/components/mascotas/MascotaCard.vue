@@ -5,6 +5,7 @@ import MascotaAvatar from './MascotaAvatar.vue'
 
 interface Props {
   mascota: Mascota
+  readonly?: boolean
 }
 
 const props = defineProps<Props>()
@@ -26,16 +27,16 @@ function calcularEdad(fechaNacimiento?: string): string {
 </script>
 
 <template>
-  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5 hover:shadow-md transition-shadow">
+  <div class="vg-card rounded-2xl p-4 sm:p-5 hover:shadow-md transition-shadow">
     <div class="flex items-start gap-3 sm:gap-4">
       <MascotaAvatar :especie-nombre="props.mascota.especie.nombre" :nombre="props.mascota.nombre" />
 
       <div class="flex-1 min-w-0">
-        <!-- Nombre + badge: wrap en móvil -->
+        <!-- Nombre + badge -->
         <div class="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
           <div class="min-w-0">
-            <h3 class="font-semibold text-slate-800 truncate">{{ props.mascota.nombre }}</h3>
-            <p class="text-xs text-slate-500 mt-0.5 truncate">
+            <h3 class="font-semibold truncate" style="color: var(--text-primary)">{{ props.mascota.nombre }}</h3>
+            <p class="text-xs mt-0.5 truncate" style="color: var(--text-muted)">
               {{ props.mascota.especie.nombre }} · {{ props.mascota.raza.nombre }}
             </p>
           </div>
@@ -44,8 +45,8 @@ function calcularEdad(fechaNacimiento?: string): string {
           </AppBadge>
         </div>
 
-        <!-- Datos clínicos en grid 2 columnas -->
-        <div class="grid grid-cols-2 gap-x-3 gap-y-1 mt-3 text-xs text-slate-500">
+        <!-- Datos clínicos -->
+        <div class="grid grid-cols-2 gap-x-3 gap-y-1 mt-3 text-xs" style="color: var(--text-muted)">
           <span class="truncate">🎂 {{ calcularEdad(props.mascota.fechaNacimiento) }}</span>
           <span v-if="props.mascota.peso" class="truncate">⚖️ {{ props.mascota.peso }} kg</span>
           <span v-if="props.mascota.color" class="truncate">🎨 {{ props.mascota.color }}</span>
@@ -53,8 +54,11 @@ function calcularEdad(fechaNacimiento?: string): string {
         </div>
 
         <!-- Footer: propietario + botón editar -->
-        <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-          <div class="flex items-center gap-1.5 text-xs text-slate-500 min-w-0">
+        <div
+          class="mt-3 pt-3 flex items-center justify-between gap-2"
+          style="border-top: 1px solid var(--border-default)"
+        >
+          <div class="flex items-center gap-1.5 text-xs min-w-0" style="color: var(--text-muted)">
             <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -62,8 +66,9 @@ function calcularEdad(fechaNacimiento?: string): string {
             <span class="truncate">{{ props.mascota.clienteNombre }}</span>
           </div>
           <button
+            v-if="!props.readonly"
             @click="emit('edit', props.mascota)"
-            class="p-1.5 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-primary-50 transition-colors shrink-0"
+            class="p-1.5 rounded-lg transition-colors shrink-0 vg-icon-btn"
             title="Editar"
             aria-label="Editar mascota"
           >
