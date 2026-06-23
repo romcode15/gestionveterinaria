@@ -1,0 +1,17 @@
+[
+  { "id": 1,  "nombre": "clientes.ver",        "descripcion": "Ver clientes",               "modulo": "personas" },
+  { "id": 2,  "nombre": "clientes.crear",       "descripcion": "Crear clientes",             "modulo": "personas" },
+  { "id": 3,  "nombre": "clientes.editar",      "descripcion": "Editar clientes",            "modulo": "personas" },
+  { "id": 4,  "nombre": "medicos.ver",          "descripcion": "Ver médicos",                "modulo": "personas" },
+  { "id": 5,  "nombre": "medicos.crear",        "descripcion": "Crear médicos",              "modulo": "personas" },
+  { "id": 6,  "nombre": "mascotas.ver",         "descripcion": "Ver mascotas (todas)",       "modulo": "mascotas" },
+  { "id": 7,  "nombre": "mascotas.crear",       "descripcion": "Crear mascotas",             "modulo": "mascotas" },
+  { "id": 8,  "nombre": "mascotas.editar",      "descripcion": "Editar mascotas",            "modulo": "mascotas" },
+  { "id": 9,  "nombre": "citas.ver",            "descripcion": "Ver citas (todas)",          "modulo": "citas" },
+  { "id": 10, "nombre": "citas.crear",          "descripcion": "Crear citas",                "modulo": "citas" },
+  { "id": 11, "nombre": "citas.editar",         "descripcion": "Editar citas",               "modulo": "citas" },
+  { "id": 12, "nombre": "citas.cancelar",       "descripcion": "Cancelar citas",             "modulo": "citas" },
+  { "id": 13, "nombre": "admin.usuarios",       "descripcion": "Administrar usuarios",       "modulo": "admin" },
+  { "id": 14, "nombre": "cliente.mis-mascotas", "descripcion": "Ver mis mascotas propias",   "modulo": "cliente" },
+  { "id": 15, "nombre": "cliente.mis-citas",    "descripcion": "Ver mis citas propias",      "modulo": "cliente" }
+]

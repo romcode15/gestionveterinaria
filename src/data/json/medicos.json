@@ -1,0 +1,44 @@
+[
+  {
+    "id": 1,
+    "tipoDocumento": "CC",
+    "numeroDocumento": "44556677",
+    "nombre": "Laura",
+    "apellido": "García",
+    "email": "garcia@vetclinic.com",
+    "telefono": "3004455667",
+    "numeroLicencia": "VET-2018-001",
+    "especialidadesIds": [1, 2],
+    "disponible": true,
+    "estado": "activo",
+    "createdAt": "2024-01-15T08:00:00"
+  },
+  {
+    "id": 2,
+    "tipoDocumento": "CC",
+    "numeroDocumento": "33445566",
+    "nombre": "Andrés",
+    "apellido": "Vargas",
+    "email": "vargas@vetclinic.com",
+    "telefono": "3113344556",
+    "numeroLicencia": "VET-2020-045",
+    "especialidadesIds": [3, 5],
+    "disponible": true,
+    "estado": "activo",
+    "createdAt": "2024-03-10T08:00:00"
+  },
+  {
+    "id": 3,
+    "tipoDocumento": "CC",
+    "numeroDocumento": "22334455",
+    "nombre": "Camila",
+    "apellido": "Reyes",
+    "email": "reyes@vetclinic.com",
+    "telefono": "3202233445",
+    "numeroLicencia": "VET-2019-023",
+    "especialidadesIds": [4, 8],
+    "disponible": false,
+    "estado": "activo",
+    "createdAt": "2024-02-20T08:00:00"
+  }
+]
