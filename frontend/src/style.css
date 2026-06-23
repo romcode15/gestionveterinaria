@@ -1,0 +1,436 @@
+@import "tailwindcss";
+
+/* ── Paleta de marca (Tailwind theme tokens) ──────────────────────────── */
+@theme {
+  --color-primary-50:  #ecfdf5;
+  --color-primary-100: #d1fae5;
+  --color-primary-200: #a7f3d0;
+  --color-primary-300: #6ee7b7;
+  --color-primary-400: #34d399;
+  --color-primary-500: #10b981;
+  --color-primary-600: #059669;
+  --color-primary-700: #047857;
+  --color-primary-800: #065f46;
+  --color-primary-900: #064e3b;
+
+  --color-secondary-50:  #f0fdfa;
+  --color-secondary-100: #ccfbf1;
+  --color-secondary-200: #99f6e4;
+  --color-secondary-300: #5eead4;
+  --color-secondary-400: #2dd4bf;
+  --color-secondary-500: #14b8a6;
+  --color-secondary-600: #0d9488;
+  --color-secondary-700: #0f766e;
+  --color-secondary-800: #115e59;
+  --color-secondary-900: #134e4a;
+
+  --color-accent-50:  #fffbeb;
+  --color-accent-100: #fef3c7;
+  --color-accent-200: #fde68a;
+  --color-accent-300: #fcd34d;
+  --color-accent-400: #fbbf24;
+  --color-accent-500: #f59e0b;
+  --color-accent-600: #d97706;
+  --color-accent-700: #b45309;
+
+  --color-danger-50:  #fff1f2;
+  --color-danger-100: #ffe4e6;
+  --color-danger-400: #fb7185;
+  --color-danger-500: #f43f5e;
+  --color-danger-600: #e11d48;
+  --color-danger-700: #be123c;
+}
+
+/* ── Variables semánticas — Light (default) ───────────────────────────── */
+:root {
+  /* Fondos */
+  --bg-base:        #f8fafc;   /* página principal */
+  --bg-surface:     #ffffff;   /* cards, modales, sidebar-item-active */
+  --bg-surface-2:   #f1f5f9;   /* hover rows, input disabled, skeleton */
+  --bg-surface-3:   #e2e8f0;   /* bordes de separación, thead */
+
+  /* Texto */
+  --text-primary:   #0f172a;   /* títulos, valores importantes */
+  --text-secondary: #334155;   /* cuerpo de texto, labels */
+  --text-muted:     #64748b;   /* subtítulos, hints, placeholders */
+  --text-disabled:  #94a3b8;   /* elementos deshabilitados */
+
+  /* Bordes */
+  --border-default: #e2e8f0;
+  --border-strong:  #cbd5e1;
+
+  /* Sidebar */
+  --sidebar-bg:          #064e3b;
+  --sidebar-item-hover:  #065f46;
+  --sidebar-item-active: #047857;
+  --sidebar-text:        #a7f3d0;
+  --sidebar-text-active: #ffffff;
+  --sidebar-border:      #065f46;
+  --sidebar-user-bg:     #047857;
+
+  /* Inputs */
+  --input-bg:       #ffffff;
+  --input-border:   #cbd5e1;
+  --input-text:     #0f172a;
+
+  /* Scrollbar */
+  --scrollbar-track:  #f1f5f9;
+  --scrollbar-thumb:  #94a3b8;
+  --scrollbar-hover:  #64748b;
+
+  /* Sombras */
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-modal: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+}
+
+/* ── Variables semánticas — Dark ──────────────────────────────────────── */
+[data-theme="dark"] {
+  /* Fondos — zinc oscuro (más neutro/cálido que slate en oscuro) */
+  --bg-base:        #0f0f11;   /* página principal */
+  --bg-surface:     #1c1c21;   /* cards, modales */
+  --bg-surface-2:   #26262d;   /* hover rows, input disabled, skeleton */
+  --bg-surface-3:   #303038;   /* thead, separadores */
+
+  /* Texto — alta legibilidad */
+  --text-primary:   #f0f0f5;   /* títulos, valores importantes  */
+  --text-secondary: #c4c4d0;   /* cuerpo de texto, labels       */
+  --text-muted:     #8888a0;   /* subtítulos, hints             */
+  --text-disabled:  #55556a;   /* elementos deshabilitados      */
+
+  /* Bordes */
+  --border-default: #2e2e38;
+  --border-strong:  #3e3e4a;
+
+  /* Sidebar — verde profundo, pero diferenciado del bg */
+  --sidebar-bg:          #0a1a14;
+  --sidebar-item-hover:  #0f2a1e;
+  --sidebar-item-active: #065f46;
+  --sidebar-text:        #6ee7b7;
+  --sidebar-text-active: #ffffff;
+  --sidebar-border:      #0f2a1e;
+  --sidebar-user-bg:     #065f46;
+
+  /* Inputs */
+  --input-bg:       #1c1c21;
+  --input-border:   #3e3e4a;
+  --input-text:     #f0f0f5;
+
+  /* Scrollbar */
+  --scrollbar-track:  #1c1c21;
+  --scrollbar-thumb:  #3e3e4a;
+  --scrollbar-hover:  #55556a;
+
+  /* Sombras — más pronunciadas en oscuro */
+  --shadow-card:  0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-modal: 0 25px 50px -12px rgb(0 0 0 / 0.7);
+}
+
+/* ── Reset y base ─────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+  transition: color-scheme 0.2s;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-base);
+  color: var(--text-secondary);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* ── Clases semánticas utilitarias ───────────────────────────────────── */
+
+/* Superficies */
+.surface         { background-color: var(--bg-surface); }
+.surface-2       { background-color: var(--bg-surface-2); }
+
+/* Texto */
+.text-base-primary   { color: var(--text-primary); }
+.text-base-secondary { color: var(--text-secondary); }
+.text-base-muted     { color: var(--text-muted); }
+
+/* Bordes */
+.border-base    { border-color: var(--border-default); }
+.border-strong  { border-color: var(--border-strong); }
+
+/* ── Componentes UI basados en variables ─────────────────────────────── */
+
+/* Card */
+.vg-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-card);
+  border-radius: 1rem;
+  transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Input / Select / Textarea base */
+.vg-input {
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--input-text);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.vg-input::placeholder {
+  color: var(--text-muted);
+}
+
+.vg-input:disabled {
+  background-color: var(--bg-surface-2);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+/* Modal backdrop — más oscuro en dark mode está bien */
+.vg-modal-panel {
+  background-color: var(--bg-surface);
+  box-shadow: var(--shadow-modal);
+}
+
+/* Table */
+.vg-table-head {
+  background-color: var(--bg-surface-2);
+  border-bottom: 1px solid var(--border-default);
+}
+.vg-table-row-hover:hover {
+  background-color: var(--bg-surface-2);
+}
+.vg-table-border {
+  border: 1px solid var(--border-default);
+}
+.vg-table-divider {
+  border-bottom: 1px solid var(--border-default);
+}
+
+/* Sidebar */
+.vg-sidebar         { background-color: var(--sidebar-bg); transition: background-color 0.25s ease; }
+.vg-sidebar-border  { border-color: var(--sidebar-border); }
+.vg-sidebar-text    { color: var(--sidebar-text); }
+.vg-sidebar-item-hover:hover {
+  background-color: var(--sidebar-item-hover);
+  color: var(--sidebar-text-active);
+}
+.vg-sidebar-item-active {
+  background-color: var(--sidebar-item-active);
+  color: var(--sidebar-text-active);
+}
+.vg-sidebar-user-bg { background-color: var(--sidebar-user-bg); }
+
+/* Header barra superior */
+.vg-topbar {
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-default);
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+/* Skeleton loader */
+.vg-skeleton {
+  background-color: var(--bg-surface-3);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar         { width: 6px; height: 6px; }
+::-webkit-scrollbar-track   { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb   { background: var(--scrollbar-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
+
+/* ── Toggle de tema ───────────────────────────────────────────────────── */
+.theme-toggle {
+  position: relative;
+  width: 2.5rem;
+  height: 1.375rem;
+  border-radius: 9999px;
+  background-color: var(--bg-surface-3);
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+  transition: background-color 0.25s ease;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .theme-toggle {
+  background-color: #059669;
+  border-color: #059669;
+}
+
+.theme-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 9999px;
+  background-color: white;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+  transition: transform 0.25s ease;
+}
+
+[data-theme="dark"] .theme-toggle-thumb {
+  transform: translateX(18px);
+}
+
+/* ── Transiciones globales ───────────────────────────────────────────── */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s ease;
+}
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+/* ── Badge variants — responden a data-theme ──────────────────────────── */
+
+/* Light */
+.badge-success  { background-color: #d1fae5; color: #047857; }
+.badge-warning  { background-color: #fef3c7; color: #b45309; }
+.badge-danger   { background-color: #ffe4e6; color: #be123c; }
+.badge-info     { background-color: #dbeafe; color: #1d4ed8; }
+.badge-neutral  { background-color: var(--bg-surface-2); color: var(--text-muted); }
+.badge-primary  { background-color: #059669; color: #ffffff; }
+
+.badge-success  .badge-dot { background-color: #10b981; }
+.badge-warning  .badge-dot { background-color: #f59e0b; }
+.badge-danger   .badge-dot { background-color: #f43f5e; }
+.badge-info     .badge-dot { background-color: #3b82f6; }
+.badge-neutral  .badge-dot { background-color: var(--text-disabled); }
+.badge-primary  .badge-dot { background-color: #a7f3d0; }
+
+/* Dark — mismos colores de texto pero fondo oscuro translúcido */
+[data-theme="dark"] .badge-success  { background-color: rgba(16, 185, 129, 0.18); color: #6ee7b7; }
+[data-theme="dark"] .badge-warning  { background-color: rgba(245, 158, 11, 0.18); color: #fcd34d; }
+[data-theme="dark"] .badge-danger   { background-color: rgba(244, 63, 94, 0.18);  color: #fb7185; }
+[data-theme="dark"] .badge-info     { background-color: rgba(59, 130, 246, 0.18); color: #93c5fd; }
+[data-theme="dark"] .badge-neutral  { background-color: var(--bg-surface-2); color: var(--text-muted); }
+[data-theme="dark"] .badge-primary  { background-color: rgba(5, 150, 105, 0.30); color: #34d399; }
+
+/* ── Icon buttons ─────────────────────────────────────────────────────── */
+.vg-icon-btn {
+  color: var(--text-disabled);
+}
+.vg-icon-btn:hover {
+  color: #059669;
+  background-color: rgba(16, 185, 129, 0.1);
+}
+[data-theme="dark"] .vg-icon-btn:hover {
+  color: #34d399;
+  background-color: rgba(52, 211, 153, 0.12);
+}
+
+.vg-icon-btn-danger {
+  color: var(--text-disabled);
+}
+.vg-icon-btn-danger:hover {
+  color: #e11d48;
+  background-color: rgba(244, 63, 94, 0.1);
+}
+[data-theme="dark"] .vg-icon-btn-danger:hover {
+  color: #fb7185;
+  background-color: rgba(244, 63, 94, 0.15);
+}
+
+/* ── Toggle switch (esterilizado / disponible) ───────────────────────── */
+.vg-toggle-off {
+  background-color: var(--bg-surface-3);
+}
+
+/* ── Client avatar initials ──────────────────────────────────────────── */
+.vg-client-avatar {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+[data-theme="dark"] .vg-client-avatar {
+  background-color: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+}
+
+/* ── Dashboard stat cards ────────────────────────────────────────────── */
+/* Los iconos del dashboard usan bg-blue-100/text-blue-600 que no tienen variable.
+   En dark mode los suavizamos */
+[data-theme="dark"] .bg-blue-100 {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+[data-theme="dark"] .text-blue-600 {
+  color: #93c5fd !important;
+}
+[data-theme="dark"] .bg-primary-100 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+}
+[data-theme="dark"] .text-primary-600 {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .bg-secondary-100 {
+  background-color: rgba(20, 184, 166, 0.15) !important;
+}
+[data-theme="dark"] .text-secondary-600 {
+  color: #5eead4 !important;
+}
+[data-theme="dark"] .bg-accent-100 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+}
+[data-theme="dark"] .text-accent-600 {
+  color: #fcd34d !important;
+}
+
+/* ── Quick-access buttons en Dashboard ──────────────────────────────── */
+[data-theme="dark"] .hover\:bg-primary-50:hover {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+}
+[data-theme="dark"] .hover\:text-primary-700:hover {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .text-slate-700 {
+  color: var(--text-secondary) !important;
+}
+[data-theme="dark"] .text-slate-800 {
+  color: var(--text-primary) !important;
+}
+[data-theme="dark"] .text-slate-500 {
+  color: var(--text-muted) !important;
+}
+[data-theme="dark"] .text-slate-600 {
+  color: var(--text-secondary) !important;
+}
+[data-theme="dark"] .text-slate-400 {
+  color: var(--text-muted) !important;
+}
+[data-theme="dark"] .border-slate-100 {
+  border-color: var(--border-default) !important;
+}
+[data-theme="dark"] .border-slate-200 {
+  border-color: var(--border-default) !important;
+}
+[data-theme="dark"] .bg-slate-50 {
+  background-color: var(--bg-surface-2) !important;
+}
+[data-theme="dark"] .bg-white {
+  background-color: var(--bg-surface) !important;
+}
+[data-theme="dark"] .divide-slate-100 > * + * {
+  border-color: var(--border-default) !important;
+}
+
+/* Toggle switch en forms — el off state */
+[data-theme="dark"] .bg-slate-300 {
+  background-color: var(--bg-surface-3) !important;
+}
