@@ -1,6 +1,8 @@
 package com.gestionvet.veterinariaapi.repository;
 
 import com.gestionvet.veterinariaapi.entity.Medico;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
@@ -9,9 +11,9 @@ import java.util.Optional;
 @Repository
 public interface MedicoRepository extends JpaRepository<Medico, Integer> {
 
-    List<Medico> findByDisponible(Boolean disponible);
+    Page<Medico> findByDisponible(Boolean disponible, Pageable pageable);
     Optional<Medico> findByEmail(String email);
     Optional<Medico> findByNumeroLicencia(String numeroLicencia);
-    List<Medico> findByEstado(String estado);
-    List<Medico> findByNombreContainingIgnoreCaseOrApellidoContainingIgnoreCase(String nombre, String apellido);
+    Page<Medico> findByEstado(String estado, Pageable pageable);
+    Page<Medico> findByNombreContainingIgnoreCaseOrApellidoContainingIgnoreCase(String nombre, String apellido, Pageable pageable);
 }
