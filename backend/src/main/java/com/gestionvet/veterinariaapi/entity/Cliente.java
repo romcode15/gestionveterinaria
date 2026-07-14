@@ -50,7 +50,7 @@ public class Cliente {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "cliente", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     private List<Mascota> mascotas = new ArrayList<>();
 
     // ── Lifecycle ──────────────────────────────────────────────────────────

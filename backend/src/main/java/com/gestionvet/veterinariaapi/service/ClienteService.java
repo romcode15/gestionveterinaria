@@ -5,6 +5,8 @@ import com.gestionvet.veterinariaapi.entity.Cliente;
 import com.gestionvet.veterinariaapi.exception.ResourceNotFoundException;
 import com.gestionvet.veterinariaapi.repository.ClienteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,14 +20,11 @@ public class ClienteService {
     @Autowired
     private ClienteRepository clienteRepository;
 
-    // ── Listar todos ───────────────────────────────────────────────────────
+    // ── Listar todos (paginado) ────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<ClienteDTO> listarTodos() {
-        return clienteRepository.findAll()
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+    public Page<ClienteDTO> listarTodos(Pageable pageable) {
+        return clienteRepository.findAll(pageable).map(this::toDTO);
     }
 
     // ── Buscar por ID ──────────────────────────────────────────────────────
@@ -37,25 +36,20 @@ public class ClienteService {
         return toDTO(cliente);
     }
 
-    // ── Buscar por nombre ──────────────────────────────────────────────────
+    // ── Buscar por nombre (paginado) ───────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<ClienteDTO> buscarPorNombre(String nombre) {
+    public Page<ClienteDTO> buscarPorNombre(String nombre, Pageable pageable) {
         return clienteRepository
-                .findByNombreContainingIgnoreCaseOrApellidoContainingIgnoreCase(nombre, nombre)
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+                .findByNombreContainingIgnoreCaseOrApellidoContainingIgnoreCase(nombre, nombre, pageable)
+                .map(this::toDTO);
     }
 
-    // ── Listar por estado ──────────────────────────────────────────────────
+    // ── Listar por estado (paginado) ───────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public List<ClienteDTO> listarPorEstado(String estado) {
-        return clienteRepository.findByEstado(estado)
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+    public Page<ClienteDTO> listarPorEstado(String estado, Pageable pageable) {
+        return clienteRepository.findByEstado(estado, pageable).map(this::toDTO);
     }
 
     // ── Crear ──────────────────────────────────────────────────────────────
@@ -104,13 +98,13 @@ public class ClienteService {
         return toDTO(clienteRepository.save(existente));
     }
 
-    // ── Eliminar ───────────────────────────────────────────────────────────
+    // ── Desactivar (borrado lógico) ────────────────────────────────────────
 
     public void eliminar(Integer id) {
-        if (!clienteRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Cliente", "id", id);
-        }
-        clienteRepository.deleteById(id);
+        Cliente cliente = clienteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente", "id", id));
+        cliente.setEstado("inactivo");
+        clienteRepository.save(cliente);
     }
 
     // ── Conversiones ───────────────────────────────────────────────────────
