@@ -8,6 +8,7 @@ import com.gestionvet.veterinariaapi.repository.ClienteRepository;
 import com.gestionvet.veterinariaapi.repository.RolRepository;
 import com.gestionvet.veterinariaapi.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ public class UsuarioService {
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private RolRepository rolRepository;
     @Autowired private ClienteRepository clienteRepository;
+    @Autowired private PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
     public List<UsuarioDTO> listarTodos() {
@@ -69,9 +71,9 @@ public class UsuarioService {
         existente.setApellido(dto.getApellido());
         if (dto.getActivo() != null) existente.setActivo(dto.getActivo());
 
-        // Solo actualizar password si viene en el DTO
+        // Solo actualizar password si viene en el DTO — hashear con BCrypt
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
-            existente.setPassword(dto.getPassword());
+            existente.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
 
         // Actualizar roles si vienen
@@ -131,7 +133,8 @@ public class UsuarioService {
     private Usuario toEntity(UsuarioDTO dto) {
         Usuario u = new Usuario();
         u.setUsername(dto.getUsername());
-        u.setPassword(dto.getPassword()); // En producción: hashear con BCrypt
+        // Hashear contraseña con BCrypt — NUNCA guardar en texto plano
+        u.setPassword(passwordEncoder.encode(dto.getPassword()));
         u.setEmail(dto.getEmail());
         u.setNombre(dto.getNombre());
         u.setApellido(dto.getApellido());
