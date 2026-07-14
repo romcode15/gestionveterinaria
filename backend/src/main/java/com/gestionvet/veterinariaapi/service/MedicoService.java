@@ -7,6 +7,8 @@ import com.gestionvet.veterinariaapi.exception.ResourceNotFoundException;
 import com.gestionvet.veterinariaapi.repository.EspecialidadRepository;
 import com.gestionvet.veterinariaapi.repository.MedicoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,8 +25,8 @@ public class MedicoService {
     @Autowired private EspecialidadRepository especialidadRepository;
 
     @Transactional(readOnly = true)
-    public List<MedicoDTO> listarTodos() {
-        return medicoRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
+    public Page<MedicoDTO> listarTodos(Pageable pageable) {
+        return medicoRepository.findAll(pageable).map(this::toDTO);
     }
 
     @Transactional(readOnly = true)
@@ -34,16 +36,15 @@ public class MedicoService {
     }
 
     @Transactional(readOnly = true)
-    public List<MedicoDTO> listarDisponibles() {
-        return medicoRepository.findByDisponible(true).stream()
-                .map(this::toDTO).collect(Collectors.toList());
+    public Page<MedicoDTO> listarDisponibles(Pageable pageable) {
+        return medicoRepository.findByDisponible(true, pageable).map(this::toDTO);
     }
 
     @Transactional(readOnly = true)
-    public List<MedicoDTO> buscarPorNombre(String nombre) {
+    public Page<MedicoDTO> buscarPorNombre(String nombre, Pageable pageable) {
         return medicoRepository
-                .findByNombreContainingIgnoreCaseOrApellidoContainingIgnoreCase(nombre, nombre)
-                .stream().map(this::toDTO).collect(Collectors.toList());
+                .findByNombreContainingIgnoreCaseOrApellidoContainingIgnoreCase(nombre, nombre, pageable)
+                .map(this::toDTO);
     }
 
     public MedicoDTO crear(MedicoDTO dto) {

@@ -5,6 +5,8 @@ import com.gestionvet.veterinariaapi.entity.*;
 import com.gestionvet.veterinariaapi.exception.ResourceNotFoundException;
 import com.gestionvet.veterinariaapi.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,8 +23,8 @@ public class MascotaService {
     @Autowired private RazaRepository razaRepository;
 
     @Transactional(readOnly = true)
-    public List<MascotaDTO> listarTodas() {
-        return mascotaRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
+    public Page<MascotaDTO> listarTodas(Pageable pageable) {
+        return mascotaRepository.findAll(pageable).map(this::toDTO);
     }
 
     @Transactional(readOnly = true)
@@ -32,18 +34,16 @@ public class MascotaService {
     }
 
     @Transactional(readOnly = true)
-    public List<MascotaDTO> buscarPorCliente(Integer clienteId) {
+    public Page<MascotaDTO> buscarPorCliente(Integer clienteId, Pageable pageable) {
         if (!clienteRepository.existsById(clienteId)) {
             throw new ResourceNotFoundException("Cliente", "id", clienteId);
         }
-        return mascotaRepository.findByClienteId(clienteId).stream()
-                .map(this::toDTO).collect(Collectors.toList());
+        return mascotaRepository.findByClienteId(clienteId, pageable).map(this::toDTO);
     }
 
     @Transactional(readOnly = true)
-    public List<MascotaDTO> buscarPorNombre(String nombre) {
-        return mascotaRepository.findByNombreContainingIgnoreCase(nombre).stream()
-                .map(this::toDTO).collect(Collectors.toList());
+    public Page<MascotaDTO> buscarPorNombre(String nombre, Pageable pageable) {
+        return mascotaRepository.findByNombreContainingIgnoreCase(nombre, pageable).map(this::toDTO);
     }
 
     public MascotaDTO crear(MascotaDTO dto) {

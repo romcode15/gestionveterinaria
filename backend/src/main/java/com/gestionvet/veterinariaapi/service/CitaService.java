@@ -5,6 +5,8 @@ import com.gestionvet.veterinariaapi.entity.*;
 import com.gestionvet.veterinariaapi.exception.ResourceNotFoundException;
 import com.gestionvet.veterinariaapi.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,15 +19,17 @@ import java.util.stream.Collectors;
 @Transactional
 public class CitaService {
 
-    @Autowired private CitaRepository citaRepository;
-    @Autowired private ClienteRepository clienteRepository;
-    @Autowired private MascotaRepository mascotaRepository;
-    @Autowired private MedicoRepository medicoRepository;
+    @Autowired private CitaRepository     citaRepository;
+    @Autowired private ClienteRepository  clienteRepository;
+    @Autowired private MascotaRepository  mascotaRepository;
+    @Autowired private MedicoRepository   medicoRepository;
     @Autowired private TipoCitaRepository tipoCitaRepository;
 
+    // ── Consultas (solo lectura) ───────────────────────────────────────────
+
     @Transactional(readOnly = true)
-    public List<CitaDTO> listarTodas() {
-        return citaRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
+    public Page<CitaDTO> listarTodas(Pageable pageable) {
+        return citaRepository.findAll(pageable).map(this::toDTO);
     }
 
     @Transactional(readOnly = true)
@@ -35,49 +39,164 @@ public class CitaService {
     }
 
     @Transactional(readOnly = true)
-    public List<CitaDTO> buscarPorFecha(LocalDate fecha) {
-        return citaRepository.findByFecha(fecha).stream().map(this::toDTO).collect(Collectors.toList());
+    public Page<CitaDTO> buscarPorFecha(LocalDate fecha, Pageable pageable) {
+        return citaRepository.findByFecha(fecha, pageable).map(this::toDTO);
     }
 
     @Transactional(readOnly = true)
-    public List<CitaDTO> buscarPorCliente(Integer clienteId) {
-        return citaRepository.findByClienteId(clienteId).stream()
-                .map(this::toDTO).collect(Collectors.toList());
+    public Page<CitaDTO> buscarPorCliente(Integer clienteId, Pageable pageable) {
+        return citaRepository.findByClienteId(clienteId, pageable).map(this::toDTO);
     }
 
     @Transactional(readOnly = true)
-    public List<CitaDTO> buscarPorMedico(Integer medicoId) {
-        return citaRepository.findByMedicoId(medicoId).stream()
-                .map(this::toDTO).collect(Collectors.toList());
+    public Page<CitaDTO> buscarPorMedico(Integer medicoId, Pageable pageable) {
+        return citaRepository.findByMedicoId(medicoId, pageable).map(this::toDTO);
     }
 
     @Transactional(readOnly = true)
-    public List<CitaDTO> buscarPorEstado(String estado) {
-        return citaRepository.findByEstado(estado).stream()
-                .map(this::toDTO).collect(Collectors.toList());
+    public Page<CitaDTO> buscarPorEstado(String estado, Pageable pageable) {
+        return citaRepository.findByEstado(estado, pageable).map(this::toDTO);
     }
 
+    // ── PROCESO TRANSACCIONAL COMPLETO ────────────────────────────────────
+    /**
+     * Registrar una cita es un proceso que afecta múltiples tablas.
+     * @Transactional garantiza que TODO se guarda o TODO se revierte (rollback).
+     *
+     * Pasos:
+     *  1. Verificar que el cliente existe y está activo
+     *  2. Verificar que la mascota pertenece al cliente y está activa
+     *  3. Verificar que el médico existe y está disponible
+     *  4. Calcular hora_fin según duración del tipo de cita
+     *  5. Verificar que no hay conflicto de horario para ese médico
+     *  6. Crear la cita con estado = 'pendiente'
+     *  7. Actualizar numero_mascotas en la tabla clientes
+     *
+     * Si cualquiera de los pasos lanza una excepción →
+     * Spring revierte TODOS los cambios automáticamente.
+     */
+    @Transactional(rollbackFor = Exception.class)
     public CitaDTO crear(CitaDTO dto) {
-        Cita cita = toEntity(dto);
-        // Calcular hora_fin automáticamente según duración del tipo de cita
-        int duracion = cita.getTipoCita().getDuracionMinutos();
-        cita.setHoraFin(cita.getHoraInicio().plusMinutes(duracion));
+
+        // ── Paso 1: Verificar cliente activo ──────────────────────────────
+        Cliente cliente = clienteRepository.findById(dto.getClienteId())
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente", "id", dto.getClienteId()));
+
+        if (!"activo".equals(cliente.getEstado())) {
+            throw new IllegalArgumentException(
+                "El cliente '" + cliente.getNombre() + " " + cliente.getApellido() +
+                "' está inactivo y no puede agendar citas.");
+        }
+
+        // ── Paso 2: Verificar mascota del cliente y estado activo ─────────
+        Mascota mascota = mascotaRepository.findById(dto.getMascotaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Mascota", "id", dto.getMascotaId()));
+
+        if (!mascota.getCliente().getId().equals(cliente.getId())) {
+            throw new IllegalArgumentException(
+                "La mascota '" + mascota.getNombre() +
+                "' no pertenece al cliente indicado.");
+        }
+
+        if (!"activo".equals(mascota.getEstado())) {
+            throw new IllegalArgumentException(
+                "La mascota '" + mascota.getNombre() +
+                "' no está activa (estado: " + mascota.getEstado() + ").");
+        }
+
+        // ── Paso 3: Verificar médico disponible y activo ──────────────────
+        Medico medico = medicoRepository.findById(dto.getMedicoId())
+                .orElseThrow(() -> new ResourceNotFoundException("Médico", "id", dto.getMedicoId()));
+
+        if (!medico.getDisponible()) {
+            throw new IllegalArgumentException(
+                "El médico '" + medico.getNombre() + " " + medico.getApellido() +
+                "' no está disponible para nuevas citas.");
+        }
+
+        if (!"activo".equals(medico.getEstado())) {
+            throw new IllegalArgumentException(
+                "El médico '" + medico.getNombre() + " " + medico.getApellido() +
+                "' está inactivo.");
+        }
+
+        // ── Paso 4: Resolver tipo de cita y calcular hora_fin ─────────────
+        TipoCita tipoCita = tipoCitaRepository.findById(dto.getTipoCitaId())
+                .orElseThrow(() -> new ResourceNotFoundException("TipoCita", "id", dto.getTipoCitaId()));
+
+        LocalTime horaInicio = dto.getHoraInicio();
+        LocalTime horaFin    = horaInicio.plusMinutes(tipoCita.getDuracionMinutos());
+
+        // ── Paso 5: Verificar conflicto de horario del médico ─────────────
+        boolean hayConflicto = citaRepository.existeConflictoHorario(
+                medico.getId(),
+                dto.getFecha(),
+                horaInicio,
+                horaFin,
+                null   // null = nueva cita, no excluir ninguna
+        );
+
+        if (hayConflicto) {
+            throw new IllegalArgumentException(
+                "El médico '" + medico.getNombre() + " " + medico.getApellido() +
+                "' ya tiene una cita el " + dto.getFecha() +
+                " entre " + horaInicio + " y " + horaFin +
+                ". Elija otro horario o médico.");
+        }
+
+        // ── Paso 6: Crear la cita ─────────────────────────────────────────
+        Cita cita = new Cita();
+        cita.setFecha(dto.getFecha());
+        cita.setHoraInicio(horaInicio);
+        cita.setHoraFin(horaFin);
         cita.setEstado("pendiente");
-        return toDTO(citaRepository.save(cita));
+        cita.setTipoCita(tipoCita);
+        cita.setMedico(medico);
+        cita.setMascota(mascota);
+        cita.setCliente(cliente);
+        cita.setMotivo(dto.getMotivo());
+        cita.setObservaciones(dto.getObservaciones());
+
+        Cita citaGuardada = citaRepository.save(cita);
+
+        // ── Paso 7: Actualizar numero_mascotas del cliente (+1) ───────────
+        // Operación directa en BD — no carga el objeto completo para evitar
+        // condiciones de carrera en entornos concurrentes
+        clienteRepository.actualizarNumeroMascotas(cliente.getId(), 1);
+
+        return toDTO(citaGuardada);
     }
+
+    // ── Actualizar cita ───────────────────────────────────────────────────
 
     public CitaDTO actualizar(Integer id, CitaDTO dto) {
         Cita existente = citaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cita", "id", id));
 
-        existente.setFecha(dto.getFecha());
-        existente.setHoraInicio(dto.getHoraInicio());
-
         TipoCita tipoCita = tipoCitaRepository.findById(dto.getTipoCitaId())
                 .orElseThrow(() -> new ResourceNotFoundException("TipoCita", "id", dto.getTipoCitaId()));
-        existente.setTipoCita(tipoCita);
-        existente.setHoraFin(dto.getHoraInicio().plusMinutes(tipoCita.getDuracionMinutos()));
 
+        LocalTime horaInicio = dto.getHoraInicio();
+        LocalTime horaFin    = horaInicio.plusMinutes(tipoCita.getDuracionMinutos());
+
+        // Verificar conflicto al actualizar (excluir la cita actual)
+        boolean hayConflicto = citaRepository.existeConflictoHorario(
+                dto.getMedicoId(),
+                dto.getFecha(),
+                horaInicio,
+                horaFin,
+                id   // excluir la propia cita al editar
+        );
+
+        if (hayConflicto) {
+            throw new IllegalArgumentException(
+                "El médico ya tiene una cita en ese horario. Elija otro horario o médico.");
+        }
+
+        existente.setFecha(dto.getFecha());
+        existente.setHoraInicio(horaInicio);
+        existente.setHoraFin(horaFin);
+        existente.setTipoCita(tipoCita);
         existente.setMedico(medicoRepository.findById(dto.getMedicoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Médico", "id", dto.getMedicoId())));
         existente.setMascota(mascotaRepository.findById(dto.getMascotaId())
@@ -91,18 +210,25 @@ public class CitaService {
         return toDTO(citaRepository.save(existente));
     }
 
+    // ── Cambiar estado ────────────────────────────────────────────────────
+
     public CitaDTO cambiarEstado(Integer id, String nuevoEstado) {
         Cita cita = citaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cita", "id", id));
 
         List<String> estadosValidos = List.of(
                 "pendiente", "confirmada", "en_curso", "completada", "cancelada", "no_asistio");
+
         if (!estadosValidos.contains(nuevoEstado)) {
-            throw new IllegalArgumentException("Estado inválido: " + nuevoEstado);
+            throw new IllegalArgumentException("Estado inválido: " + nuevoEstado +
+                ". Valores permitidos: " + estadosValidos);
         }
+
         cita.setEstado(nuevoEstado);
         return toDTO(citaRepository.save(cita));
     }
+
+    // ── Eliminar ──────────────────────────────────────────────────────────
 
     public void eliminar(Integer id) {
         if (!citaRepository.existsById(id)) {
@@ -111,7 +237,7 @@ public class CitaService {
         citaRepository.deleteById(id);
     }
 
-    // ── Conversiones ───────────────────────────────────────────────────────
+    // ── Conversiones DTO ↔ Entidad ────────────────────────────────────────
 
     private CitaDTO toDTO(Cita c) {
         CitaDTO dto = new CitaDTO();
@@ -133,22 +259,5 @@ public class CitaService {
         dto.setObservaciones(c.getObservaciones());
         dto.setCreatedAt(c.getCreatedAt());
         return dto;
-    }
-
-    private Cita toEntity(CitaDTO dto) {
-        Cita c = new Cita();
-        c.setFecha(dto.getFecha());
-        c.setHoraInicio(dto.getHoraInicio());
-        c.setTipoCita(tipoCitaRepository.findById(dto.getTipoCitaId())
-                .orElseThrow(() -> new ResourceNotFoundException("TipoCita", "id", dto.getTipoCitaId())));
-        c.setMedico(medicoRepository.findById(dto.getMedicoId())
-                .orElseThrow(() -> new ResourceNotFoundException("Médico", "id", dto.getMedicoId())));
-        c.setMascota(mascotaRepository.findById(dto.getMascotaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Mascota", "id", dto.getMascotaId())));
-        c.setCliente(clienteRepository.findById(dto.getClienteId())
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente", "id", dto.getClienteId())));
-        c.setMotivo(dto.getMotivo());
-        c.setObservaciones(dto.getObservaciones());
-        return c;
     }
 }
