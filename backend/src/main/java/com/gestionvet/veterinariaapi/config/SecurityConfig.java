@@ -1,0 +1,129 @@
+package com.gestionvet.veterinariaapi.config;
+
+import com.gestionvet.veterinariaapi.security.JwtAuthFilter;
+import com.gestionvet.veterinariaapi.security.UserDetailsServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)   // habilita @PreAuthorize en controllers
+public class SecurityConfig {
+
+    @Autowired
+    private JwtAuthFilter jwtAuthFilter;
+
+    @Autowired
+    private UserDetailsServiceImpl userDetailsService;
+
+    // ── Rutas públicas (sin token) ─────────────────────────────────────────
+
+    private static final String[] PUBLIC_URLS = {
+        "/api/auth/**",          // login
+        "/swagger-ui.html",
+        "/swagger-ui/**",
+        "/api-docs/**",
+        "/v3/api-docs/**"
+    };
+
+    // ── Cadena de filtros de seguridad ────────────────────────────────────
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            // Deshabilitar CSRF (API REST stateless, no usa cookies de sesión)
+            .csrf(AbstractHttpConfigurer::disable)
+
+            // Configurar CORS (ya lo maneja CorsConfig.java)
+            .cors(cors -> {})
+
+            // Reglas de autorización por endpoint
+            .authorizeHttpRequests(auth -> auth
+
+                // ── Rutas completamente públicas ───────────────────────────
+                .requestMatchers(PUBLIC_URLS).permitAll()
+
+                // ── Catálogos: cualquier usuario autenticado puede leer ────
+                .requestMatchers(HttpMethod.GET, "/api/catalogos/**").authenticated()
+
+                // ── Clientes ───────────────────────────────────────────────
+                .requestMatchers(HttpMethod.GET,    "/api/clientes/**").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.POST,   "/api/clientes").hasAnyRole("ADMIN", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.PUT,    "/api/clientes/**").hasAnyRole("ADMIN", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.DELETE, "/api/clientes/**").hasRole("ADMIN")
+
+                // ── Mascotas ───────────────────────────────────────────────
+                .requestMatchers(HttpMethod.GET,    "/api/mascotas/**").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.POST,   "/api/mascotas").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.PUT,    "/api/mascotas/**").hasAnyRole("ADMIN", "VETERINARIO")
+                .requestMatchers(HttpMethod.DELETE, "/api/mascotas/**").hasRole("ADMIN")
+
+                // ── Médicos ────────────────────────────────────────────────
+                .requestMatchers(HttpMethod.GET,    "/api/medicos/**").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.POST,   "/api/medicos").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,    "/api/medicos/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/medicos/**").hasRole("ADMIN")
+
+                // ── Citas ──────────────────────────────────────────────────
+                .requestMatchers(HttpMethod.GET,    "/api/citas/**").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.POST,   "/api/citas").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.PUT,    "/api/citas/**").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.PATCH,  "/api/citas/**").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.DELETE, "/api/citas/**").hasRole("ADMIN")
+
+                // ── Usuarios (solo ADMIN) ──────────────────────────────────
+                .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
+
+                // ── Cualquier otra ruta requiere autenticación ─────────────
+                .anyRequest().authenticated()
+            )
+
+            // Sin sesión HTTP (JWT es stateless)
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+
+            // Proveedor de autenticación con BCrypt
+            .authenticationProvider(authenticationProvider())
+
+            // Registrar el filtro JWT antes del filtro de autenticación por usuario/password
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    // ── Beans de infraestructura de seguridad ──────────────────────────────
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(10);  // factor de coste 10 (recomendado)
+    }
+
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }}
