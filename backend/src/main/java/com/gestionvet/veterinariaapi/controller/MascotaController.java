@@ -3,62 +3,85 @@ package com.gestionvet.veterinariaapi.controller;
 import com.gestionvet.veterinariaapi.dto.MascotaDTO;
 import com.gestionvet.veterinariaapi.service.MascotaService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/mascotas")
 @Tag(name = "Mascotas", description = "Gestión de mascotas (pacientes)")
+@SecurityRequirement(name = "bearerAuth")
 public class MascotaController {
 
     @Autowired
     private MascotaService mascotaService;
 
-    // GET /api/mascotas
     @GetMapping
-    @Operation(summary = "Listar todas las mascotas")
-    public ResponseEntity<List<MascotaDTO>> listarTodas() {
-        return ResponseEntity.ok(mascotaService.listarTodas());
+    @Operation(summary = "Listar mascotas paginadas",
+               description = "Parámetros: page (0-based), size (default 20), sort (campo,asc|desc)")
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
+    public ResponseEntity<Page<MascotaDTO>> listarTodas(
+            @RequestParam(defaultValue = "0")        int page,
+            @RequestParam(defaultValue = "20")       int size,
+            @RequestParam(defaultValue = "nombre")   String sort,
+            @RequestParam(defaultValue = "asc")      String dir) {
+
+        Pageable pageable = PageRequest.of(page, size,
+                dir.equalsIgnoreCase("desc") ? Sort.by(sort).descending() : Sort.by(sort).ascending());
+        return ResponseEntity.ok(mascotaService.listarTodas(pageable));
     }
 
-    // GET /api/mascotas/{id}
     @GetMapping("/{id}")
     @Operation(summary = "Buscar mascota por ID")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Mascota encontrada"),
         @ApiResponse(responseCode = "404", description = "Mascota no encontrada")
     })
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
     public ResponseEntity<MascotaDTO> buscarPorId(@PathVariable Integer id) {
         return ResponseEntity.ok(mascotaService.buscarPorId(id));
     }
 
-    // GET /api/mascotas/cliente/{clienteId}
     @GetMapping("/cliente/{clienteId}")
-    @Operation(summary = "Listar mascotas por cliente propietario")
+    @Operation(summary = "Listar mascotas por cliente (paginado)")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Mascotas encontradas"),
         @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
     })
-    public ResponseEntity<List<MascotaDTO>> buscarPorCliente(@PathVariable Integer clienteId) {
-        return ResponseEntity.ok(mascotaService.buscarPorCliente(clienteId));
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
+    public ResponseEntity<Page<MascotaDTO>> buscarPorCliente(
+            @PathVariable Integer clienteId,
+            @RequestParam(defaultValue = "0")        int page,
+            @RequestParam(defaultValue = "20")       int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("nombre").ascending());
+        return ResponseEntity.ok(mascotaService.buscarPorCliente(clienteId, pageable));
     }
 
-    // GET /api/mascotas/buscar?nombre=Max
     @GetMapping("/buscar")
-    @Operation(summary = "Buscar mascotas por nombre")
-    public ResponseEntity<List<MascotaDTO>> buscarPorNombre(@RequestParam String nombre) {
-        return ResponseEntity.ok(mascotaService.buscarPorNombre(nombre));
+    @Operation(summary = "Buscar mascotas por nombre (paginado)")
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
+    public ResponseEntity<Page<MascotaDTO>> buscarPorNombre(
+            @RequestParam String nombre,
+            @RequestParam(defaultValue = "0")        int page,
+            @RequestParam(defaultValue = "20")       int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("nombre").ascending());
+        return ResponseEntity.ok(mascotaService.buscarPorNombre(nombre, pageable));
     }
 
-    // POST /api/mascotas
     @PostMapping
     @Operation(summary = "Registrar nueva mascota")
     @ApiResponses({
@@ -66,30 +89,31 @@ public class MascotaController {
         @ApiResponse(responseCode = "400", description = "Datos inválidos"),
         @ApiResponse(responseCode = "404", description = "Cliente, especie o raza no encontrada")
     })
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
     public ResponseEntity<MascotaDTO> crear(@Valid @RequestBody MascotaDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(mascotaService.crear(dto));
     }
 
-    // PUT /api/mascotas/{id}
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar mascota existente")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Mascota actualizada correctamente"),
         @ApiResponse(responseCode = "404", description = "Mascota no encontrada")
     })
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO')")
     public ResponseEntity<MascotaDTO> actualizar(
             @PathVariable Integer id,
             @Valid @RequestBody MascotaDTO dto) {
         return ResponseEntity.ok(mascotaService.actualizar(id, dto));
     }
 
-    // DELETE /api/mascotas/{id}
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar mascota")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Mascota eliminada correctamente"),
         @ApiResponse(responseCode = "404", description = "Mascota no encontrada")
     })
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         mascotaService.eliminar(id);
         return ResponseEntity.noContent().build();

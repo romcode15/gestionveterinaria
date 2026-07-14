@@ -5,74 +5,106 @@ import com.gestionvet.veterinariaapi.service.CitaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/citas")
 @Tag(name = "Citas", description = "Gestión de citas veterinarias")
+@SecurityRequirement(name = "bearerAuth")
 public class CitaController {
 
     @Autowired
     private CitaService citaService;
 
-    // GET /api/citas
     @GetMapping
-    @Operation(summary = "Listar todas las citas")
-    public ResponseEntity<List<CitaDTO>> listarTodas() {
-        return ResponseEntity.ok(citaService.listarTodas());
+    @Operation(summary = "Listar citas paginadas",
+               description = "Parámetros: page (0-based), size (default 20), sort (campo,asc|desc)")
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
+    public ResponseEntity<Page<CitaDTO>> listarTodas(
+            @RequestParam(defaultValue = "0")     int page,
+            @RequestParam(defaultValue = "20")    int size,
+            @RequestParam(defaultValue = "fecha") String sort,
+            @RequestParam(defaultValue = "desc")  String dir) {
+
+        Pageable pageable = PageRequest.of(page, size,
+                dir.equalsIgnoreCase("desc") ? Sort.by(sort).descending() : Sort.by(sort).ascending());
+        return ResponseEntity.ok(citaService.listarTodas(pageable));
     }
 
-    // GET /api/citas/{id}
     @GetMapping("/{id}")
     @Operation(summary = "Buscar cita por ID")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Cita encontrada"),
         @ApiResponse(responseCode = "404", description = "Cita no encontrada")
     })
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
     public ResponseEntity<CitaDTO> buscarPorId(@PathVariable Integer id) {
         return ResponseEntity.ok(citaService.buscarPorId(id));
     }
 
-    // GET /api/citas/fecha?fecha=2026-06-22
     @GetMapping("/fecha")
-    @Operation(summary = "Listar citas por fecha específica")
-    public ResponseEntity<List<CitaDTO>> buscarPorFecha(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
-        return ResponseEntity.ok(citaService.buscarPorFecha(fecha));
+    @Operation(summary = "Listar citas por fecha (paginado)")
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
+    public ResponseEntity<Page<CitaDTO>> buscarPorFecha(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
+            @RequestParam(defaultValue = "0")     int page,
+            @RequestParam(defaultValue = "20")    int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("horaInicio").ascending());
+        return ResponseEntity.ok(citaService.buscarPorFecha(fecha, pageable));
     }
 
-    // GET /api/citas/cliente/{clienteId}
     @GetMapping("/cliente/{clienteId}")
-    @Operation(summary = "Listar citas por cliente")
-    public ResponseEntity<List<CitaDTO>> buscarPorCliente(@PathVariable Integer clienteId) {
-        return ResponseEntity.ok(citaService.buscarPorCliente(clienteId));
+    @Operation(summary = "Listar citas por cliente (paginado)")
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
+    public ResponseEntity<Page<CitaDTO>> buscarPorCliente(
+            @PathVariable Integer clienteId,
+            @RequestParam(defaultValue = "0")     int page,
+            @RequestParam(defaultValue = "20")    int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("fecha").descending());
+        return ResponseEntity.ok(citaService.buscarPorCliente(clienteId, pageable));
     }
 
-    // GET /api/citas/medico/{medicoId}
     @GetMapping("/medico/{medicoId}")
-    @Operation(summary = "Listar citas por médico")
-    public ResponseEntity<List<CitaDTO>> buscarPorMedico(@PathVariable Integer medicoId) {
-        return ResponseEntity.ok(citaService.buscarPorMedico(medicoId));
+    @Operation(summary = "Listar citas por médico (paginado)")
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
+    public ResponseEntity<Page<CitaDTO>> buscarPorMedico(
+            @PathVariable Integer medicoId,
+            @RequestParam(defaultValue = "0")     int page,
+            @RequestParam(defaultValue = "20")    int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("fecha").descending());
+        return ResponseEntity.ok(citaService.buscarPorMedico(medicoId, pageable));
     }
 
-    // GET /api/citas/estado/{estado}
     @GetMapping("/estado/{estado}")
-    @Operation(summary = "Listar citas por estado")
-    public ResponseEntity<List<CitaDTO>> buscarPorEstado(@PathVariable String estado) {
-        return ResponseEntity.ok(citaService.buscarPorEstado(estado));
+    @Operation(summary = "Listar citas por estado (paginado)")
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
+    public ResponseEntity<Page<CitaDTO>> buscarPorEstado(
+            @PathVariable String estado,
+            @RequestParam(defaultValue = "0")     int page,
+            @RequestParam(defaultValue = "20")    int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("fecha").descending());
+        return ResponseEntity.ok(citaService.buscarPorEstado(estado, pageable));
     }
 
-    // POST /api/citas
     @PostMapping
     @Operation(summary = "Registrar nueva cita")
     @ApiResponses({
@@ -80,32 +112,35 @@ public class CitaController {
         @ApiResponse(responseCode = "400", description = "Datos inválidos"),
         @ApiResponse(responseCode = "404", description = "Médico, mascota o cliente no encontrado")
     })
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
     public ResponseEntity<CitaDTO> crear(@Valid @RequestBody CitaDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(citaService.crear(dto));
     }
 
-    // PUT /api/citas/{id}
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar cita existente")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Cita actualizada correctamente"),
         @ApiResponse(responseCode = "404", description = "Cita no encontrada")
     })
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
     public ResponseEntity<CitaDTO> actualizar(
             @PathVariable Integer id,
             @Valid @RequestBody CitaDTO dto) {
         return ResponseEntity.ok(citaService.actualizar(id, dto));
     }
 
-    // PATCH /api/citas/{id}/estado
     @PatchMapping("/{id}/estado")
-    @Operation(summary = "Cambiar estado de una cita",
-               description = "Estados válidos: pendiente, confirmada, en_curso, completada, cancelada, no_asistio")
+    @Operation(
+        summary = "Cambiar estado de una cita",
+        description = "Estados válidos: pendiente, confirmada, en_curso, completada, cancelada, no_asistio"
+    )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Estado actualizado correctamente"),
         @ApiResponse(responseCode = "400", description = "Estado inválido"),
         @ApiResponse(responseCode = "404", description = "Cita no encontrada")
     })
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
     public ResponseEntity<CitaDTO> cambiarEstado(
             @PathVariable Integer id,
             @RequestBody Map<String, String> body) {
@@ -116,13 +151,13 @@ public class CitaController {
         return ResponseEntity.ok(citaService.cambiarEstado(id, estado));
     }
 
-    // DELETE /api/citas/{id}
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar cita")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Cita eliminada correctamente"),
         @ApiResponse(responseCode = "404", description = "Cita no encontrada")
     })
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         citaService.eliminar(id);
         return ResponseEntity.noContent().build();

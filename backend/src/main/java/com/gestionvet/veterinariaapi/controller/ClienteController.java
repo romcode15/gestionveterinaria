@@ -3,90 +3,113 @@ package com.gestionvet.veterinariaapi.controller;
 import com.gestionvet.veterinariaapi.dto.ClienteDTO;
 import com.gestionvet.veterinariaapi.service.ClienteService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/clientes")
 @Tag(name = "Clientes", description = "Gestión de clientes de la veterinaria")
+@SecurityRequirement(name = "bearerAuth")
 public class ClienteController {
 
     @Autowired
     private ClienteService clienteService;
 
-    // GET /api/clientes
     @GetMapping
-    @Operation(summary = "Listar todos los clientes")
-    @ApiResponse(responseCode = "200", description = "Lista de clientes obtenida correctamente")
-    public ResponseEntity<List<ClienteDTO>> listarTodos() {
-        return ResponseEntity.ok(clienteService.listarTodos());
+    @Operation(summary = "Listar clientes paginados",
+               description = "Parámetros: page (0-based), size (default 20), sort (campo,asc|desc)")
+    @ApiResponse(responseCode = "200", description = "Página obtenida correctamente")
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
+    public ResponseEntity<Page<ClienteDTO>> listarTodos(
+            @Parameter(description = "Número de página (0-based)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Registros por página")       @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Campo de ordenamiento")      @RequestParam(defaultValue = "apellido") String sort,
+            @Parameter(description = "Dirección: asc o desc")      @RequestParam(defaultValue = "asc") String dir) {
+
+        Pageable pageable = PageRequest.of(page, size,
+                dir.equalsIgnoreCase("desc") ? Sort.by(sort).descending() : Sort.by(sort).ascending());
+        return ResponseEntity.ok(clienteService.listarTodos(pageable));
     }
 
-    // GET /api/clientes/{id}
     @GetMapping("/{id}")
     @Operation(summary = "Buscar cliente por ID")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Cliente encontrado"),
         @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
     })
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
     public ResponseEntity<ClienteDTO> buscarPorId(@PathVariable Integer id) {
         return ResponseEntity.ok(clienteService.buscarPorId(id));
     }
 
-    // GET /api/clientes/buscar?nombre=Ana
     @GetMapping("/buscar")
-    @Operation(summary = "Buscar clientes por nombre o apellido")
-    public ResponseEntity<List<ClienteDTO>> buscarPorNombre(@RequestParam String nombre) {
-        return ResponseEntity.ok(clienteService.buscarPorNombre(nombre));
+    @Operation(summary = "Buscar clientes por nombre o apellido (paginado)")
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
+    public ResponseEntity<Page<ClienteDTO>> buscarPorNombre(
+            @RequestParam String nombre,
+            @RequestParam(defaultValue = "0")        int page,
+            @RequestParam(defaultValue = "20")       int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("apellido").ascending());
+        return ResponseEntity.ok(clienteService.buscarPorNombre(nombre, pageable));
     }
 
-    // GET /api/clientes/estado/{estado}
     @GetMapping("/estado/{estado}")
-    @Operation(summary = "Listar clientes por estado (activo/inactivo)")
-    public ResponseEntity<List<ClienteDTO>> listarPorEstado(@PathVariable String estado) {
-        return ResponseEntity.ok(clienteService.listarPorEstado(estado));
+    @Operation(summary = "Listar clientes por estado (paginado)")
+    @PreAuthorize("hasAnyRole('ADMIN','RECEPCIONISTA')")
+    public ResponseEntity<Page<ClienteDTO>> listarPorEstado(
+            @PathVariable String estado,
+            @RequestParam(defaultValue = "0")        int page,
+            @RequestParam(defaultValue = "20")       int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("apellido").ascending());
+        return ResponseEntity.ok(clienteService.listarPorEstado(estado, pageable));
     }
 
-    // POST /api/clientes
     @PostMapping
     @Operation(summary = "Registrar nuevo cliente")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Cliente creado correctamente"),
-        @ApiResponse(responseCode = "400", description = "Datos inválidos o cliente duplicado")
+        @ApiResponse(responseCode = "400", description = "Datos inválidos o duplicado")
     })
+    @PreAuthorize("hasAnyRole('ADMIN','RECEPCIONISTA')")
     public ResponseEntity<ClienteDTO> crear(@Valid @RequestBody ClienteDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(clienteService.crear(dto));
     }
 
-    // PUT /api/clientes/{id}
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar cliente existente")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Cliente actualizado correctamente"),
-        @ApiResponse(responseCode = "404", description = "Cliente no encontrado"),
-        @ApiResponse(responseCode = "400", description = "Datos inválidos")
+        @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
     })
+    @PreAuthorize("hasAnyRole('ADMIN','RECEPCIONISTA')")
     public ResponseEntity<ClienteDTO> actualizar(
             @PathVariable Integer id,
             @Valid @RequestBody ClienteDTO dto) {
         return ResponseEntity.ok(clienteService.actualizar(id, dto));
     }
 
-    // DELETE /api/clientes/{id}
     @DeleteMapping("/{id}")
-    @Operation(summary = "Eliminar cliente")
+    @Operation(summary = "Desactivar cliente (borrado lógico)")
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Cliente eliminado correctamente"),
+        @ApiResponse(responseCode = "204", description = "Cliente desactivado correctamente"),
         @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
     })
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         clienteService.eliminar(id);
         return ResponseEntity.noContent().build();
