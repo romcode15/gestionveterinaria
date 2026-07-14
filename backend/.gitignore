@@ -14,8 +14,12 @@ target/
 *.project
 *.settings/
 
-# Spring Boot
+# Spring Boot — archivo de variables reales (NUNCA subir)
 application-local.properties
+.env
+
+# WAR generado
+*.war
 
 # OS
 .DS_Store
