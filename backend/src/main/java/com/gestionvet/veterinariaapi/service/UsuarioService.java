@@ -5,6 +5,7 @@ import com.gestionvet.veterinariaapi.entity.Rol;
 import com.gestionvet.veterinariaapi.entity.Usuario;
 import com.gestionvet.veterinariaapi.exception.ResourceNotFoundException;
 import com.gestionvet.veterinariaapi.repository.ClienteRepository;
+import com.gestionvet.veterinariaapi.repository.MedicoRepository;
 import com.gestionvet.veterinariaapi.repository.RolRepository;
 import com.gestionvet.veterinariaapi.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ public class UsuarioService {
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private RolRepository rolRepository;
     @Autowired private ClienteRepository clienteRepository;
+    @Autowired private MedicoRepository  medicoRepository;
     @Autowired private PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
@@ -89,6 +91,14 @@ public class UsuarioService {
             existente.setCliente(null);
         }
 
+        // Actualizar medicoId si viene
+        if (dto.getMedicoId() != null) {
+            existente.setMedico(medicoRepository.findById(dto.getMedicoId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Medico", "id", dto.getMedicoId())));
+        } else {
+            existente.setMedico(null);
+        }
+
         return toDTO(usuarioRepository.save(existente));
     }
 
@@ -125,6 +135,7 @@ public class UsuarioService {
         dto.setUltimoAcceso(u.getUltimoAcceso());
         dto.setCreatedAt(u.getCreatedAt());
         dto.setClienteId(u.getCliente() != null ? u.getCliente().getId() : null);
+        dto.setMedicoId(u.getMedico()  != null ? u.getMedico().getId()  : null);
         dto.setRolesIds(u.getRoles().stream().map(Rol::getId).collect(Collectors.toSet()));
         dto.setRolesNombres(u.getRoles().stream().map(Rol::getNombre).collect(Collectors.toSet()));
         return dto;
@@ -143,6 +154,10 @@ public class UsuarioService {
         if (dto.getClienteId() != null) {
             u.setCliente(clienteRepository.findById(dto.getClienteId())
                     .orElseThrow(() -> new ResourceNotFoundException("Cliente", "id", dto.getClienteId())));
+        }
+        if (dto.getMedicoId() != null) {
+            u.setMedico(medicoRepository.findById(dto.getMedicoId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Medico", "id", dto.getMedicoId())));
         }
         return u;
     }

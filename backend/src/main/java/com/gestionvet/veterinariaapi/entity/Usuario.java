@@ -41,6 +41,11 @@ public class Usuario {
     @JoinColumn(name = "cliente_id")
     private Cliente cliente;
 
+    // Vinculación con el registro de médico (para usuarios con rol VETERINARIO)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "medico_id")
+    private Medico medico;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "usuarios_roles",
@@ -92,6 +97,9 @@ public class Usuario {
 
     public Cliente getCliente() { return cliente; }
     public void setCliente(Cliente cliente) { this.cliente = cliente; }
+
+    public Medico getMedico() { return medico; }
+    public void setMedico(Medico medico) { this.medico = medico; }
 
     public Set<Rol> getRoles() { return roles; }
     public void setRoles(Set<Rol> roles) { this.roles = roles; }

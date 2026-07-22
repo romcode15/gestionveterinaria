@@ -86,6 +86,57 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PATCH,  "/api/citas/**").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
                 .requestMatchers(HttpMethod.DELETE, "/api/citas/**").hasRole("ADMIN")
 
+                // ── Portal Cliente (solo rol CLIENTE) ─────────────────────
+                .requestMatchers("/api/portal/cliente/**").hasRole("CLIENTE")
+
+                // ── Portal Médico (solo rol VETERINARIO) ───────────────────
+                .requestMatchers("/api/portal/medico/**").hasRole("VETERINARIO")
+
+                // ── Dashboard ──────────────────────────────────────────────
+                .requestMatchers(HttpMethod.GET, "/api/dashboard/**").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+
+                // ── Módulo Clínico ─────────────────────────────────────────
+                .requestMatchers(HttpMethod.GET,    "/api/diagnosticos/**").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.POST,   "/api/diagnosticos").hasAnyRole("ADMIN", "VETERINARIO")
+                .requestMatchers(HttpMethod.PUT,    "/api/diagnosticos/**").hasAnyRole("ADMIN", "VETERINARIO")
+
+                .requestMatchers(HttpMethod.GET,    "/api/tratamientos/**").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.POST,   "/api/tratamientos").hasAnyRole("ADMIN", "VETERINARIO")
+                .requestMatchers(HttpMethod.PUT,    "/api/tratamientos/**").hasAnyRole("ADMIN", "VETERINARIO")
+
+                .requestMatchers(HttpMethod.GET,    "/api/historial-clinico/**").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+
+                .requestMatchers(HttpMethod.GET,    "/api/vias-administracion/**").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.POST,   "/api/vias-administracion").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,    "/api/vias-administracion/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/vias-administracion/**").hasRole("ADMIN")
+
+                // ── Inventario ─────────────────────────────────────────────
+                .requestMatchers(HttpMethod.GET,    "/api/inventario/**").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.POST,   "/api/inventario/categorias").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,    "/api/inventario/categorias/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST,   "/api/inventario/proveedores").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,    "/api/inventario/proveedores/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/inventario/proveedores/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST,   "/api/inventario/productos").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,    "/api/inventario/productos/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/inventario/productos/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST,   "/api/inventario/lotes").hasAnyRole("ADMIN", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.POST,   "/api/inventario/movimientos/**").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+
+                // ── Vacunación ─────────────────────────────────────────────
+                .requestMatchers(HttpMethod.GET,    "/api/vacunas/**").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.POST,   "/api/vacunas").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,    "/api/vacunas/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/vacunas/**").hasRole("ADMIN")
+
+                .requestMatchers(HttpMethod.GET,    "/api/mascota-vacunas/**").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.POST,   "/api/mascota-vacunas").hasAnyRole("ADMIN", "VETERINARIO")
+                .requestMatchers(HttpMethod.PUT,    "/api/mascota-vacunas/**").hasAnyRole("ADMIN", "VETERINARIO")
+
+                // ── Auditoría (solo ADMIN) ─────────────────────────────────
+                .requestMatchers("/api/auditoria/**").hasRole("ADMIN")
+
                 // ── Usuarios (solo ADMIN) ──────────────────────────────────
                 .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
 

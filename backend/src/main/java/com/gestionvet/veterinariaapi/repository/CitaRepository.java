@@ -21,11 +21,63 @@ public interface CitaRepository extends JpaRepository<Cita, Integer> {
     List<Cita> findByMascotaId(Integer mascotaId);
     List<Cita> findByFechaBetween(LocalDate inicio, LocalDate fin);
 
-    /**
-     * Verifica si el médico ya tiene una cita activa que solape el horario propuesto.
-     * Se excluyen citas canceladas y no_asistio para permitir reutilizar el slot.
-     * Si citaIdExcluir es null (nueva cita) no excluye ninguna.
-     */
+    // ── Conteos para dashboard ─────────────────────────────────────────────
+
+    long countByFecha(LocalDate fecha);
+
+    long countByFechaAndEstado(LocalDate fecha, String estado);
+
+    @Query("SELECT COUNT(DISTINCT c.mascota.id) FROM Cita c WHERE c.fecha = :fecha AND c.estado = 'completada'")
+    long countMascotasAtendidasEnFecha(@Param("fecha") LocalDate fecha);
+
+    @Query("SELECT COUNT(c) FROM Cita c WHERE c.fecha BETWEEN :inicio AND :fin")
+    long countEnRango(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+
+    @Query("SELECT COUNT(c) FROM Cita c WHERE c.fecha BETWEEN :inicio AND :fin AND c.estado = :estado")
+    long countEnRangoYEstado(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin, @Param("estado") String estado);
+
+    // ── Médico más activo ──────────────────────────────────────────────────
+    // Devuelve [medicoId, medicoNombre, totalCitas] ordenado desc
+    @Query("""
+        SELECT c.medico.id, c.medico.nombre, c.medico.apellido, COUNT(c) AS total
+        FROM Cita c
+        WHERE c.fecha BETWEEN :inicio AND :fin
+          AND c.estado NOT IN ('cancelada','no_asistio')
+        GROUP BY c.medico.id, c.medico.nombre, c.medico.apellido
+        ORDER BY total DESC
+        """)
+    List<Object[]> medicosConMasCitas(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+
+    // ── Citas por estado en un rango ──────────────────────────────────────
+    @Query("""
+        SELECT c.estado, COUNT(c) AS total
+        FROM Cita c
+        WHERE c.fecha BETWEEN :inicio AND :fin
+        GROUP BY c.estado
+        ORDER BY total DESC
+        """)
+    List<Object[]> citasPorEstadoEnRango(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+
+    // ── Citas por tipo en un rango ─────────────────────────────────────────
+    @Query("""
+        SELECT c.tipoCita.nombre, COUNT(c) AS total
+        FROM Cita c
+        WHERE c.fecha BETWEEN :inicio AND :fin
+        GROUP BY c.tipoCita.nombre
+        ORDER BY total DESC
+        """)
+    List<Object[]> citasPorTipoEnRango(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+
+    // ── Citas por día de la semana ─────────────────────────────────────────
+    @Query(value = """
+        SELECT TO_CHAR(fecha, 'Day') AS dia, COUNT(*) AS total
+        FROM citas
+        WHERE fecha BETWEEN :inicio AND :fin
+        GROUP BY TO_CHAR(fecha, 'Day'), EXTRACT(DOW FROM fecha)
+        ORDER BY EXTRACT(DOW FROM fecha)
+        """, nativeQuery = true)
+    List<Object[]> citasPorDiaSemana(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+
     @Query("""
         SELECT COUNT(c) > 0 FROM Cita c
         WHERE c.medico.id = :medicoId
