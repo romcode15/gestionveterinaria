@@ -15,6 +15,8 @@ import AppPagination from '@/components/ui/AppPagination.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import SearchToolbar from '@/components/common/SearchToolbar.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
+import FormActions from '@/components/forms/FormActions.vue'
 
 import { api } from '@/services/api'
 import type { SpringPage } from '@/services/api'
@@ -290,8 +292,8 @@ function limpiarFiltro() {
           </h2>
         </div>
 
-        <div v-if="loading" class="p-4 space-y-3">
-          <div v-for="i in 4" :key="i" class="h-16 vg-skeleton rounded-xl animate-pulse"/>
+        <div v-if="loading" class="p-4">
+          <LoadingState>Cargando diagnósticos...</LoadingState>
         </div>
 
         <EmptyState
@@ -373,69 +375,74 @@ function limpiarFiltro() {
     <!-- Modal nuevo diagnóstico -->
     <AppModal v-model="showModal" title="Registrar diagnóstico" size="lg">
       <form class="space-y-4" @submit.prevent="guardar">
-        <div>
-          <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary)">
-            ID de cita <span class="text-red-500">*</span>
-          </label>
-          <AppInput
-            v-model="form.citaId"
-            type="number"
-            placeholder="Ej: 42"
-            :error="formErrors.citaId"
-          />
-          <p class="text-xs mt-1" style="color: var(--text-muted)">
-            La cita debe estar en estado "en_curso" o "completada"
-          </p>
-        </div>
+        <AppInput
+          v-model="form.citaId"
+          id="citaId"
+          label="ID de cita"
+          type="number"
+          placeholder="Ej: 42"
+          :error="formErrors.citaId"
+          required
+        />
 
-        <div>
-          <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary)">
-            Síntomas <span class="text-red-500">*</span>
-          </label>
-          <AppTextarea
-            v-model="form.sintomas"
-            placeholder="Describe los síntomas observados..."
-            rows="3"
-            :error="formErrors.sintomas"
-          />
-        </div>
+        <AppTextarea
+          v-model="form.sintomas"
+          id="sintomas"
+          label="Síntomas"
+          placeholder="Describe los síntomas observados..."
+          :rows="3"
+          :error="formErrors.sintomas"
+          required
+        />
 
-        <div>
-          <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary)">
-            Diagnóstico <span class="text-red-500">*</span>
-          </label>
-          <AppTextarea
-            v-model="form.diagnostico"
-            placeholder="Diagnóstico clínico..."
-            rows="3"
-            :error="formErrors.diagnostico"
-          />
-        </div>
+        <AppTextarea
+          v-model="form.diagnostico"
+          id="diagnostico"
+          label="Diagnóstico"
+          placeholder="Diagnóstico clínico..."
+          :rows="3"
+          :error="formErrors.diagnostico"
+          required
+        />
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary)">Pronóstico</label>
-            <AppSelect v-model="form.pronostico" :options="pronosticoOptions" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary)">Peso (kg)</label>
-            <AppInput v-model="form.pesoConsulta" type="number" step="0.01" placeholder="Ej: 12.5" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary)">Temperatura (°C)</label>
-            <AppInput v-model="form.temperatura" type="number" step="0.1" placeholder="Ej: 38.5" />
-          </div>
+          <AppSelect
+            v-model="form.pronostico"
+            id="pronostico"
+            label="Pronóstico"
+            :options="pronosticoOptions"
+          />
+          <AppInput
+            v-model="form.pesoConsulta"
+            id="peso"
+            label="Peso (kg)"
+            type="number"
+            step="0.01"
+            placeholder="Ej: 12.5"
+          />
+          <AppInput
+            v-model="form.temperatura"
+            id="temperatura"
+            label="Temperatura (°C)"
+            type="number"
+            step="0.1"
+            placeholder="Ej: 38.5"
+          />
         </div>
 
-        <div>
-          <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary)">Observaciones</label>
-          <AppTextarea v-model="form.observaciones" placeholder="Notas adicionales..." rows="2" />
-        </div>
+        <AppTextarea
+          v-model="form.observaciones"
+          id="observaciones"
+          label="Observaciones"
+          placeholder="Notas adicionales..."
+          :rows="2"
+        />
 
-        <div class="flex gap-3 justify-end pt-2">
-          <AppButton type="button" variant="secondary" @click="showModal = false">Cancelar</AppButton>
-          <AppButton type="submit" :loading="guardando">Guardar diagnóstico</AppButton>
-        </div>
+        <FormActions
+          :loading="guardando"
+          submit-label="Guardar diagnóstico"
+          @cancel="showModal = false"
+        />
       </form>
     </AppModal>
   </DashboardLayout>

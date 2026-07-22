@@ -5,6 +5,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppAlert from '@/components/ui/AppAlert.vue'
+import AppButton from '@/components/ui/AppButton.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
@@ -110,16 +112,11 @@ function colorPronostico(p: string): string {
   <DashboardLayout>
     <template #header>
       <div class="flex items-center gap-2">
-        <button
-          class="p-1.5 rounded-lg transition-colors"
-          style="color: var(--text-muted)"
-          @click="router.back()"
-          aria-label="Volver"
-        >
+        <AppButton variant="ghost" size="sm" aria-label="Volver" @click="router.back()">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
-        </button>
+        </AppButton>
         <PageHeader
           :title="mascota ? `Historial de ${mascota.nombre}` : 'Mi historial'"
           :subtitle="mascota ? `${mascota.especie.nombre} · ${mascota.raza.nombre}` : 'Cargando...'"
@@ -135,10 +132,7 @@ function colorPronostico(p: string): string {
       </Transition>
 
       <!-- Loading -->
-      <div v-if="loading" class="space-y-3">
-        <div class="h-20 vg-skeleton rounded-xl animate-pulse" />
-        <div v-for="i in 3" :key="i" class="h-24 vg-skeleton rounded-xl animate-pulse" />
-      </div>
+      <LoadingState v-if="loading">Cargando historial...</LoadingState>
 
       <!-- Sin consultas -->
       <EmptyState

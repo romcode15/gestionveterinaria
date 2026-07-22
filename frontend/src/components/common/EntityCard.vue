@@ -1,6 +1,7 @@
 <!-- components/common/EntityCard.vue -->
 <script setup lang="ts">
 import AppBadge from '@/components/ui/AppBadge.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 
 interface Status {
   label: string
@@ -61,19 +62,14 @@ withDefaults(defineProps<Props>(), {
           style="border-top: 1px solid var(--border-default)"
         >
           <slot name="actions">
-            <!-- Si readonly, no mostrar nada; si no, mostrar botón editar por defecto -->
             <template v-if="!readonly">
               <div class="flex-1"></div>
-              <button
-                class="p-1.5 rounded-lg transition-colors vg-icon-btn"
-                title="Editar"
-                aria-label="Editar"
-              >
+              <AppButton variant="ghost" size="sm" title="Editar" aria-label="Editar">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
-              </button>
+              </AppButton>
             </template>
           </slot>
         </div>

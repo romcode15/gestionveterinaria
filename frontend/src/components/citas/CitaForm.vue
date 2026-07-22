@@ -4,7 +4,7 @@ import type { Cita, CitaFormData, TipoCita, Medico, Mascota } from '@/types'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import AppTextarea from '@/components/ui/AppTextarea.vue'
-import AppButton from '@/components/ui/AppButton.vue'
+import FormActions from '@/components/forms/FormActions.vue'
 
 interface Props {
   cita?: Cita | null
@@ -168,13 +168,10 @@ function handleSubmit() {
       :rows="2"
     />
 
-    <div class="flex justify-end gap-3 pt-2">
-      <AppButton type="button" variant="ghost" @click="emit('cancel')" :disabled="props.loading">
-        Cancelar
-      </AppButton>
-      <AppButton type="submit" :loading="props.loading">
-        {{ props.cita ? 'Guardar cambios' : 'Agendar cita' }}
-      </AppButton>
-    </div>
+    <FormActions
+      :loading="props.loading"
+      :submit-label="props.cita ? 'Guardar cambios' : 'Agendar cita'"
+      @cancel="emit('cancel')"
+    />
   </form>
 </template>

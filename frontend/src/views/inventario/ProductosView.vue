@@ -10,9 +10,12 @@ import AppSelect from '@/components/ui/AppSelect.vue'
 import AppTextarea from '@/components/ui/AppTextarea.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
+import AppToggle from '@/components/ui/AppToggle.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import SearchToolbar from '@/components/common/SearchToolbar.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
+import FormActions from '@/components/forms/FormActions.vue'
 import { api } from '@/services/api'
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
@@ -427,8 +430,8 @@ function stockBajo(stock: number, minimo: number): boolean {
           </h2>
         </div>
 
-        <div v-if="loading" class="p-4 space-y-3">
-          <div v-for="i in 4" :key="i" class="h-16 vg-skeleton rounded-xl animate-pulse" />
+        <div v-if="loading" class="p-4">
+          <LoadingState>Cargando productos...</LoadingState>
         </div>
 
         <EmptyState
@@ -604,30 +607,16 @@ function stockBajo(stock: number, minimo: number): boolean {
           :options="proveedorOptions"
           placeholder="Seleccionar proveedor..."
         />
-        <div class="flex items-center gap-3">
-          <button
-            type="button"
-            @click="formProducto.requiereReceta = !formProducto.requiereReceta"
-            :class="[
-              'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1',
-              formProducto.requiereReceta ? 'bg-primary-600' : 'bg-slate-300',
-            ]"
-            role="switch"
-            :aria-checked="formProducto.requiereReceta"
-          >
-            <span
-              :class="[
-                'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
-                formProducto.requiereReceta ? 'translate-x-6' : 'translate-x-1',
-              ]"
-            />
-          </button>
-          <span class="text-sm" style="color: var(--text-secondary)">Requiere receta médica</span>
-        </div>
-        <div class="flex gap-3 justify-end pt-2">
-          <AppButton type="button" variant="ghost" @click="showModalProducto = false">Cancelar</AppButton>
-          <AppButton type="submit" :loading="guardandoProducto">Guardar</AppButton>
-        </div>
+        <AppToggle
+          v-model="formProducto.requiereReceta"
+          label="Requiere receta médica"
+          aria-label="Requiere receta médica"
+        />
+        <FormActions
+          :loading="guardandoProducto"
+          submit-label="Guardar"
+          @cancel="showModalProducto = false"
+        />
       </form>
     </AppModal>
 
@@ -673,10 +662,11 @@ function stockBajo(stock: number, minimo: number): boolean {
           step="0.01"
           placeholder="0.00"
         />
-        <div class="flex gap-3 justify-end pt-2">
-          <AppButton type="button" variant="ghost" @click="showModalLote = false">Cancelar</AppButton>
-          <AppButton type="submit" :loading="guardandoLote">Registrar lote</AppButton>
-        </div>
+        <FormActions
+          :loading="guardandoLote"
+          submit-label="Registrar lote"
+          @cancel="showModalLote = false"
+        />
       </form>
     </AppModal>
 
@@ -703,10 +693,11 @@ function stockBajo(stock: number, minimo: number): boolean {
           :error="formErrorsSalida.motivo"
           :rows="2"
         />
-        <div class="flex gap-3 justify-end pt-2">
-          <AppButton type="button" variant="ghost" @click="showModalSalida = false">Cancelar</AppButton>
-          <AppButton type="submit" :loading="guardandoSalida">Registrar salida</AppButton>
-        </div>
+        <FormActions
+          :loading="guardandoSalida"
+          submit-label="Registrar salida"
+          @cancel="showModalSalida = false"
+        />
       </form>
     </AppModal>
   </DashboardLayout>

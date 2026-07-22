@@ -8,6 +8,7 @@ import AppAlert from '@/components/ui/AppAlert.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
 import AppTable from '@/components/ui/AppTable.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 
 import PageHeader from '@/components/common/PageHeader.vue'
 import SearchToolbar from '@/components/common/SearchToolbar.vue'
@@ -127,7 +128,7 @@ async function handleToggleEstado(cliente: Cliente) {
           :rows="clientesStore.clientes"
           :loading="clientesStore.loading"
           empty-message="No se encontraron clientes"
-          @row-click="(row) => console.log('Fila clickeada', row)"
+          @row-click="abrirEditar"
         >
           <!-- Columna Cliente (avatar + nombre + ciudad) -->
           <template #cell-cliente="{ row }">
@@ -168,35 +169,38 @@ async function handleToggleEstado(cliente: Cliente) {
             </AppBadge>
           </template>
 
-          <!-- Acciones (botones Editar / Activar-Inactivar) -->
+          <!-- Acciones -->
           <template #actions="{ row }">
-            <button
-              @click="abrirEditar(row)"
-              class="p-1.5 rounded-lg transition-colors vg-icon-btn"
-              title="Editar"
-              aria-label="Editar cliente"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </button>
-            <button
-              @click="handleToggleEstado(row)"
-              class="p-1.5 rounded-lg transition-colors"
-              :class="row.estado === 'activo' ? 'vg-icon-btn-danger' : 'vg-icon-btn'"
-              :title="row.estado === 'activo' ? 'Inactivar' : 'Activar'"
-              :aria-label="row.estado === 'activo' ? 'Inactivar cliente' : 'Activar cliente'"
-            >
-              <svg v-if="row.estado === 'activo'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-              </svg>
-              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </button>
+            <div class="flex items-center justify-end gap-1">
+              <AppButton
+                variant="ghost"
+                size="sm"
+                title="Editar"
+                aria-label="Editar cliente"
+                @click.stop="abrirEditar(row)"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </AppButton>
+              <AppButton
+                :variant="row.estado === 'activo' ? 'danger' : 'ghost'"
+                size="sm"
+                :title="row.estado === 'activo' ? 'Inactivar' : 'Activar'"
+                :aria-label="row.estado === 'activo' ? 'Inactivar cliente' : 'Activar cliente'"
+                @click.stop="handleToggleEstado(row)"
+              >
+                <svg v-if="row.estado === 'activo'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </AppButton>
+            </div>
           </template>
         </AppTable>
 

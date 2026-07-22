@@ -3,8 +3,9 @@ import { reactive, watch } from 'vue'
 import type { Medico, MedicoFormData, Especialidad } from '@/types'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
-import AppButton from '@/components/ui/AppButton.vue'
+import AppToggle from '@/components/ui/AppToggle.vue'
 import EspecialidadSelect from './EspecialidadSelect.vue'
+import FormActions from '@/components/forms/FormActions.vue'
 
 interface Props {
   medico?: Medico | null
@@ -22,12 +23,8 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const tipoDocumentoOptions = [
-  { value: 'CC', label: 'Cédula de Ciudadanía' },
-  { value: 'CE', label: 'Cédula de Extranjería' },
-  { value: 'NIT', label: 'NIT' },
-  { value: 'PP', label: 'Pasaporte' },
-]
+import { TIPO_DOCUMENTO_OPTIONS } from '@/constants/documentTypes'
+import { isValidEmail } from '@/utils/validators'
 
 const form = reactive<MedicoFormData>({
   tipoDocumento: 'CC',
@@ -69,7 +66,7 @@ function validate(): boolean {
   if (!form.apellido.trim()) { errors.apellido = 'Requerido'; valid = false }
   if (!form.email.trim()) {
     errors.email = 'Requerido'; valid = false
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+  } else if (!isValidEmail(form.email)) {
     errors.email = 'Email inválido'; valid = false
   }
   if (!form.telefono.trim()) { errors.telefono = 'Requerido'; valid = false }
@@ -91,7 +88,7 @@ function handleSubmit() {
         id="tipoDoc"
         v-model="form.tipoDocumento"
         label="Tipo de documento"
-        :options="tipoDocumentoOptions"
+        :options="TIPO_DOCUMENTO_OPTIONS"
         required
       />
       <AppInput
@@ -158,35 +155,16 @@ function handleSubmit() {
       :error="errors.especialidadesIds"
     />
 
-    <div class="flex items-center gap-3">
-      <button
-        type="button"
-        @click="form.disponible = !form.disponible"
-        :class="[
-          'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1',
-          form.disponible ? 'bg-primary-600' : 'bg-slate-300',
-        ]"
-        :aria-checked="form.disponible"
-        role="switch"
-        aria-label="Disponible"
-      >
-        <span
-          :class="[
-            'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
-            form.disponible ? 'translate-x-6' : 'translate-x-1',
-          ]"
-        />
-      </button>
-      <span class="text-sm text-slate-700">Disponible para citas</span>
-    </div>
+    <AppToggle
+      v-model="form.disponible"
+      label="Disponible para citas"
+      aria-label="Disponible"
+    />
 
-    <div class="flex justify-end gap-3 pt-2">
-      <AppButton type="button" variant="ghost" @click="emit('cancel')" :disabled="props.loading">
-        Cancelar
-      </AppButton>
-      <AppButton type="submit" :loading="props.loading">
-        {{ props.medico ? 'Guardar cambios' : 'Registrar médico' }}
-      </AppButton>
-    </div>
+    <FormActions
+      :loading="props.loading"
+      :submit-label="props.medico ? 'Guardar cambios' : 'Registrar médico'"
+      @cancel="emit('cancel')"
+    />
   </form>
 </template>

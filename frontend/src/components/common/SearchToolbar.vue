@@ -1,12 +1,14 @@
 <script setup lang="ts">
 interface Props {
   searchPlaceholder?: string
+  showSearch?: boolean
   showNewButton?: boolean
   newButtonLabel?: string
 }
 
 withDefaults(defineProps<Props>(), {
   searchPlaceholder: 'Buscar...',
+  showSearch: true,
   showNewButton: true,
   newButtonLabel: 'Nuevo',
 })
@@ -24,6 +26,7 @@ const search = defineModel<string>('search', { default: '' })
     <div class="flex flex-col gap-3">
       <div class="flex flex-col sm:flex-row gap-3 w-full">
         <AppSearchInput
+          v-if="showSearch"
           v-model="search"
           :placeholder="searchPlaceholder"
           class="w-full sm:flex-1"

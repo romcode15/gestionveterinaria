@@ -60,7 +60,7 @@ function formatFecha(fecha: string): string {
               <span class="text-xs font-semibold" style="color: var(--text-muted)">
                 {{ cita.horaInicio }} - {{ cita.horaFin }}
               </span>
-              <StatusBadge :estado="cita.estado" size="sm" />
+              <StatusBadge :status="cita.estado" size="sm" />
             </div>
             <p class="font-medium text-sm truncate" style="color: var(--text-primary)">{{ cita.mascotaNombre }}</p>
             <p class="text-xs truncate" style="color: var(--text-secondary)">{{ cita.tipoCita.nombre }}</p>

@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import AppAlert from '@/components/ui/AppAlert.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppInput from '@/components/ui/AppInput.vue'
-import AppTextarea from '@/components/ui/AppTextarea.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import SearchToolbar from '@/components/common/SearchToolbar.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
+import FormActions from '@/components/forms/FormActions.vue'
 import { api } from '@/services/api'
 
 interface Proveedor {
@@ -53,7 +54,7 @@ async function cargarProveedores(p = 0) {
   loading.value = true
   error.value = null
   try {
-    const params: any = { page: p, size: pageSize.value, sort: 'nombre', dir: 'asc' }
+    const params: Record<string, unknown> = { page: p, size: pageSize.value, sort: 'nombre', dir: 'asc' }
     if (searchQuery.value) params.search = searchQuery.value
 
     const res = await api.getPaged<Proveedor>('/api/inventario/proveedores', params)
@@ -175,8 +176,8 @@ async function toggleEstado(proveedor: Proveedor) {
           </h2>
         </div>
 
-        <div v-if="loading" class="p-4 space-y-3">
-          <div v-for="i in 4" :key="i" class="h-16 vg-skeleton rounded-xl animate-pulse" />
+        <div v-if="loading" class="p-4">
+          <LoadingState>Cargando proveedores...</LoadingState>
         </div>
 
         <EmptyState
@@ -216,7 +217,11 @@ async function toggleEstado(proveedor: Proveedor) {
                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
               </AppButton>
-              <AppButton size="sm" variant="ghost" :class="p.activo ? 'vg-icon-btn-danger' : 'vg-icon-btn'" @click="toggleEstado(p)">
+              <AppButton
+                size="sm"
+                :variant="p.activo ? 'danger' : 'ghost'"
+                @click="toggleEstado(p)"
+              >
                 {{ p.activo ? 'Desactivar' : 'Activar' }}
               </AppButton>
             </div>
@@ -279,10 +284,11 @@ async function toggleEstado(proveedor: Proveedor) {
             placeholder="Dirección completa"
           />
         </div>
-        <div class="flex gap-3 justify-end pt-2">
-          <AppButton type="button" variant="ghost" @click="showModal = false">Cancelar</AppButton>
-          <AppButton type="submit" :loading="guardando">Guardar</AppButton>
-        </div>
+        <FormActions
+          :loading="guardando"
+          submit-label="Guardar"
+          @cancel="showModal = false"
+        />
       </form>
     </AppModal>
   </DashboardLayout>

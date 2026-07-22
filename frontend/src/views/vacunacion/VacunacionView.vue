@@ -12,6 +12,8 @@ import AppBadge from '@/components/ui/AppBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import SearchToolbar from '@/components/common/SearchToolbar.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
+import FormActions from '@/components/forms/FormActions.vue'
 import { api } from '@/services/api'
 
 // ── Tipos locales ──────────────────────────────────────────────────────────
@@ -62,7 +64,6 @@ const searchQuery = ref('')
 
 // Alertas
 const alertas = ref<{ proximas: number; vencidas: number }>({ proximas: 0, vencidas: 0 })
-const mostrarAlertas = ref(false)
 
 // Modal registro
 const showModal = ref(false)
@@ -123,7 +124,7 @@ async function cargarRegistros(p = 0) {
   loading.value = true
   error.value = null
   try {
-    const params: any = { page: p, size: pageSize.value, sort: 'fechaAplicacion', dir: 'desc' }
+    const params: Record<string, unknown> = { page: p, size: pageSize.value, sort: 'fechaAplicacion', dir: 'desc' }
     if (filtroEstado.value !== 'todos') params.estado = filtroEstado.value
     if (searchQuery.value) params.search = searchQuery.value
 
@@ -258,7 +259,7 @@ function formatFecha(f: string) {
                 ⚠️ {{ alertas.proximas }} vacuna(s) próxima(s) a vencer (30 días)
               </p>
             </div>
-            <AppButton size="sm" variant="secondary" @click="filtroEstado = 'vigente'; searchQuery = ''">
+            <AppButton size="sm" variant="ghost" @click="filtroEstado = 'vigente'; searchQuery = ''">
               Ver listado
             </AppButton>
           </div>
@@ -270,7 +271,7 @@ function formatFecha(f: string) {
                 ❌ {{ alertas.vencidas }} vacuna(s) vencidas
               </p>
             </div>
-            <AppButton size="sm" variant="secondary" @click="filtroEstado = 'vencida'; searchQuery = ''">
+            <AppButton size="sm" variant="ghost" @click="filtroEstado = 'vencida'; searchQuery = ''">
               Ver listado
             </AppButton>
           </div>
@@ -302,9 +303,7 @@ function formatFecha(f: string) {
           </h2>
         </div>
 
-        <div v-if="loading" class="p-4 space-y-3">
-          <div v-for="i in 4" :key="i" class="h-16 vg-skeleton rounded-xl animate-pulse" />
-        </div>
+        <LoadingState v-if="loading">Cargando registros...</LoadingState>
 
         <EmptyState
           v-else-if="registros.length === 0"
@@ -403,10 +402,11 @@ function formatFecha(f: string) {
           label="Lote (opcional)"
           placeholder="Número de lote"
         />
-        <div class="flex gap-3 justify-end pt-2">
-          <AppButton type="button" variant="ghost" @click="showModal = false">Cancelar</AppButton>
-          <AppButton type="submit" :loading="guardando">Registrar</AppButton>
-        </div>
+        <FormActions
+          :loading="guardando"
+          submit-label="Registrar"
+          @cancel="showModal = false"
+        />
       </form>
     </AppModal>
   </DashboardLayout>

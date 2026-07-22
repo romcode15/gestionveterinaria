@@ -4,7 +4,9 @@ import type { Cliente, ClienteFormData } from '@/types'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import AppTextarea from '@/components/ui/AppTextarea.vue'
-import AppButton from '@/components/ui/AppButton.vue'
+import FormActions from '@/components/forms/FormActions.vue'
+import { TIPO_DOCUMENTO_OPTIONS } from '@/constants/documentTypes'
+import { isValidEmail } from '@/utils/validators'
 
 interface Props {
   cliente?: Cliente | null
@@ -21,12 +23,7 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const tipoDocumentoOptions = [
-  { value: 'CC', label: 'Cédula de Ciudadanía' },
-  { value: 'CE', label: 'Cédula de Extranjería' },
-  { value: 'NIT', label: 'NIT' },
-  { value: 'PP', label: 'Pasaporte' },
-]
+const tipoDocumentoOptions = TIPO_DOCUMENTO_OPTIONS
 
 const form = reactive<ClienteFormData>({
   tipoDocumento: 'CC',
@@ -73,7 +70,7 @@ function validate(): boolean {
   if (!form.apellido.trim()) { errors.apellido = 'Requerido'; valid = false }
   if (!form.email.trim()) {
     errors.email = 'Requerido'; valid = false
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+  } else if (!isValidEmail(form.email)) {
     errors.email = 'Email inválido'; valid = false
   }
   if (!form.telefono.trim()) { errors.telefono = 'Requerido'; valid = false }
@@ -177,13 +174,10 @@ function handleSubmit() {
       :rows="2"
     />
 
-    <div class="flex justify-end gap-3 pt-2">
-      <AppButton type="button" variant="ghost" @click="emit('cancel')" :disabled="props.loading">
-        Cancelar
-      </AppButton>
-      <AppButton type="submit" :loading="props.loading">
-        {{ props.cliente ? 'Guardar cambios' : 'Registrar cliente' }}
-      </AppButton>
-    </div>
+    <FormActions
+      :loading="props.loading"
+      :submit-label="props.cliente ? 'Guardar cambios' : 'Registrar cliente'"
+      @cancel="emit('cancel')"
+    />
   </form>
 </template>

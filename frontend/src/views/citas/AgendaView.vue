@@ -73,9 +73,9 @@ async function handleSubmit(data: CitaFormData) {
         </AppAlert>
       </Transition>
 
-      <!-- Toolbar sin búsqueda, solo botón nuevo -->
+      <!-- Toolbar sin campo de búsqueda, solo botón nuevo -->
       <SearchToolbar
-        :show-new-button="true"
+        :show-search="false"
         new-button-label="Nueva cita"
         @new="abrirCrear"
       />

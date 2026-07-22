@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import MascotaCard from '@/components/mascotas/MascotaCard.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 
@@ -85,7 +86,7 @@ function formatFecha(fecha: string): string {
     </div>
 
     <!-- Stats con EntitySummary -->
-    <EntitySummary :items="summaryItems" :columns="3" class="mb-6" />
+    <EntitySummary :items="summaryItems" class="mb-6" />
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Mis mascotas -->
@@ -149,19 +150,19 @@ function formatFecha(fecha: string): string {
                 <p class="text-xs truncate" style="color: var(--text-secondary)">{{ cita.tipoCita.nombre }}</p>
                 <p class="text-xs truncate mt-0.5" style="color: var(--text-muted)">{{ cita.medicoNombre }}</p>
               </div>
-              <StatusBadge :estado="cita.estado" size="sm" />
+              <StatusBadge :status="cita.estado" size="sm" />
             </div>
           </div>
         </AppCard>
 
-        <button
+        <AppButton
+          variant="ghost"
+          full-width
+          class="mt-3"
           @click="router.push('/mis-citas')"
-          class="mt-3 w-full text-sm font-medium py-2 rounded-lg transition-colors text-center"
-          style="color: var(--color-primary)"
-          :style="{ hover: { backgroundColor: 'var(--bg-hover)' } }"
         >
           Ver historial completo →
-        </button>
+        </AppButton>
       </div>
     </div>
   </DashboardLayout>

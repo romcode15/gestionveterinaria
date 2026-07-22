@@ -5,10 +5,12 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppAlert from '@/components/ui/AppAlert.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
 
 import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
 
 import { api } from '@/services/api'
 import type { SpringPage } from '@/services/api'
@@ -113,9 +115,7 @@ function formatFecha(f: string): string {
         </div>
 
         <!-- Loading skeleton -->
-        <div v-if="loading" class="p-4 space-y-3">
-          <div v-for="i in 5" :key="i" class="h-16 vg-skeleton rounded-xl animate-pulse" />
-        </div>
+        <LoadingState v-if="loading">Cargando diagnósticos...</LoadingState>
 
         <!-- Sin datos -->
         <EmptyState
@@ -218,20 +218,12 @@ function formatFecha(f: string): string {
 
               <!-- Acciones del detalle -->
               <div class="flex gap-2 mt-4 flex-wrap">
-                <button
-                  class="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
-                  style="background-color: var(--color-primary); color: white"
-                  @click="router.push(`/diagnosticos/${d.id}/tratamiento`)"
-                >
+                <AppButton size="sm" @click="router.push(`/diagnosticos/${d.id}/tratamiento`)">
                   Ver tratamiento
-                </button>
-                <button
-                  class="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
-                  style="background-color: var(--bg-surface-3); color: var(--text-secondary)"
-                  @click="router.push(`/mascotas/${d.mascotaId}/historial`)"
-                >
+                </AppButton>
+                <AppButton variant="ghost" size="sm" @click="router.push(`/mascotas/${d.mascotaId}/historial`)">
                   Historial de {{ d.mascotaNombre }}
-                </button>
+                </AppButton>
               </div>
             </div>
           </div>

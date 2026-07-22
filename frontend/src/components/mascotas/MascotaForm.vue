@@ -4,7 +4,8 @@ import type { Mascota, MascotaFormData, Especie, Raza, Cliente } from '@/types'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import AppTextarea from '@/components/ui/AppTextarea.vue'
-import AppButton from '@/components/ui/AppButton.vue'
+import AppToggle from '@/components/ui/AppToggle.vue'
+import FormActions from '@/components/forms/FormActions.vue'
 
 interface Props {
   mascota?: Mascota | null
@@ -192,27 +193,11 @@ function handleSubmit() {
       />
     </div>
 
-    <div class="flex items-center gap-3">
-      <button
-        type="button"
-        @click="form.esterilizado = !form.esterilizado"
-        :class="[
-          'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1',
-          form.esterilizado ? 'bg-primary-600' : 'bg-slate-300',
-        ]"
-        :aria-checked="form.esterilizado"
-        role="switch"
-        aria-label="Esterilizado"
-      >
-        <span
-          :class="[
-            'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
-            form.esterilizado ? 'translate-x-6' : 'translate-x-1',
-          ]"
-        />
-      </button>
-      <span class="text-sm text-slate-700">Esterilizado / Castrado</span>
-    </div>
+    <AppToggle
+      v-model="form.esterilizado"
+      label="Esterilizado / Castrado"
+      aria-label="Esterilizado"
+    />
 
     <AppTextarea
       id="observaciones"
@@ -222,13 +207,10 @@ function handleSubmit() {
       :rows="2"
     />
 
-    <div class="flex justify-end gap-3 pt-2">
-      <AppButton type="button" variant="ghost" @click="emit('cancel')" :disabled="props.loading">
-        Cancelar
-      </AppButton>
-      <AppButton type="submit" :loading="props.loading">
-        {{ props.mascota ? 'Guardar cambios' : 'Registrar mascota' }}
-      </AppButton>
-    </div>
+    <FormActions
+      :loading="props.loading"
+      :submit-label="props.mascota ? 'Guardar cambios' : 'Registrar mascota'"
+      @cancel="emit('cancel')"
+    />
   </form>
 </template>

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import AppAlert from '@/components/ui/AppAlert.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
 
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -105,7 +106,7 @@ async function handleSubmit(data: MedicoFormData) {
       </Transition>
 
       <!-- Stats con EntitySummary -->
-      <EntitySummary :items="summaryItems" :columns="4" />
+      <EntitySummary :items="summaryItems" />
 
       <!-- Toolbar con SearchToolbar -->
       <SearchToolbar
@@ -180,19 +181,16 @@ async function handleSubmit(data: MedicoFormData) {
 
               <template #actions>
                 <div class="flex-1"></div>
-                <button
-                  @click="abrirEditar(medico)"
-                  class="p-1.5 rounded-lg transition-colors vg-icon-btn"
-                  title="Editar médico"
-                >
+                <AppButton variant="ghost" size="sm" title="Editar médico" @click="abrirEditar(medico)">
                   ✏️
-                </button>
+                </AppButton>
               </template>
             </EntityCard>
           </template>
 
           <EmptyState
             v-else-if="!medicosStore.loading"
+            class="col-span-full"
             icon="👨‍⚕️"
             title="No se encontraron médicos"
             message="No hay médicos registrados que coincidan con la búsqueda"

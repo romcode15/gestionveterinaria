@@ -6,6 +6,7 @@ import AppModal from '@/components/ui/AppModal.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import AppAlert from '@/components/ui/AppAlert.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 
 import PageHeader from '@/components/common/PageHeader.vue'
 import SearchToolbar from '@/components/common/SearchToolbar.vue'
@@ -31,12 +32,20 @@ const successMessage = ref('')
 const loading = ref(false)
 
 const estadoOptions = [
-  { value: 'todos', label: 'Todos los estados' },
-  { value: 'pendiente', label: 'Pendientes' },
+  { value: 'todos',      label: 'Todos los estados' },
+  { value: 'pendiente',  label: 'Pendientes' },
   { value: 'confirmada', label: 'Confirmadas' },
-  { value: 'en_curso', label: 'En curso' },
+  { value: 'en_curso',   label: 'En curso' },
   { value: 'completada', label: 'Completadas' },
-  { value: 'cancelada', label: 'Canceladas' },
+  { value: 'cancelada',  label: 'Canceladas' },
+]
+
+const estadoCambioOptions = [
+  { value: 'pendiente',  label: 'Pendiente' },
+  { value: 'confirmada', label: 'Confirmar' },
+  { value: 'en_curso',   label: 'En curso' },
+  { value: 'completada', label: 'Completar' },
+  { value: 'cancelada',  label: 'Cancelar' },
 ]
 
 const medicoOptions = computed(() => [
@@ -45,11 +54,11 @@ const medicoOptions = computed(() => [
 ])
 
 const summaryItems = computed(() => [
-  { label: 'Total', value: citasStore.estadisticas.total, icon: '📋' },
-  { label: 'Pendientes', value: citasStore.estadisticas.pendientes, icon: '⏳' },
+  { label: 'Total',       value: citasStore.estadisticas.total,      icon: '📋' },
+  { label: 'Pendientes',  value: citasStore.estadisticas.pendientes,  icon: '⏳' },
   { label: 'Confirmadas', value: citasStore.estadisticas.confirmadas, icon: '✅' },
   { label: 'Completadas', value: citasStore.estadisticas.completadas, icon: '✔️' },
-  { label: 'Canceladas', value: citasStore.estadisticas.canceladas, icon: '❌' },
+  { label: 'Canceladas',  value: citasStore.estadisticas.canceladas,  icon: '❌' },
 ])
 
 function abrirCrear() {
@@ -79,8 +88,8 @@ async function handleSubmit(data: CitaFormData) {
   }
 }
 
-async function cambiarEstado(cita: Cita, estado: EstadoCita) {
-  await citasStore.cambiarEstado(cita.id, estado)
+async function cambiarEstado(cita: Cita, estado: string | number) {
+  await citasStore.cambiarEstado(cita.id, estado as EstadoCita)
   successMessage.value = `Estado actualizado a: ${estado}`
   setTimeout(() => (successMessage.value = ''), 3000)
 }
@@ -111,12 +120,11 @@ function formatFecha(fecha: string): string {
         </AppAlert>
       </Transition>
 
-      <!-- Stats con EntitySummary -->
-      <EntitySummary :items="summaryItems" :columns="5" />
+      <!-- Estadísticas -->
+      <EntitySummary :items="summaryItems" />
 
-      <!-- Toolbar con SearchToolbar -->
+      <!-- Toolbar de filtros -->
       <SearchToolbar
-        :show-new-button="true"
         new-button-label="Nueva cita"
         @new="abrirCrear"
       >
@@ -148,7 +156,7 @@ function formatFecha(fecha: string): string {
             v-if="citasStore.citasFiltradas.length === 0"
             icon="📅"
             title="Sin citas"
-            message="No se encontraron citas"
+            message="No se encontraron citas con los filtros seleccionados"
           />
 
           <div
@@ -157,6 +165,7 @@ function formatFecha(fecha: string): string {
             class="px-4 sm:px-6 py-4 vg-table-row-hover transition-colors"
           >
             <div class="flex gap-3">
+              <!-- Franja de color del tipo de cita -->
               <div
                 class="w-1 rounded-full shrink-0 self-stretch"
                 :style="{ backgroundColor: cita.tipoCita.color }"
@@ -175,7 +184,9 @@ function formatFecha(fecha: string): string {
 
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
-                      <p class="font-semibold text-sm" style="color: var(--text-primary)">{{ cita.mascotaNombre }}</p>
+                      <p class="font-semibold text-sm" style="color: var(--text-primary)">
+                        {{ cita.mascotaNombre }}
+                      </p>
                       <AppBadge variant="neutral" size="sm">{{ cita.tipoCita.nombre }}</AppBadge>
                     </div>
                     <p class="text-xs truncate mt-0.5" style="color: var(--text-secondary)">{{ cita.motivo }}</p>
@@ -185,45 +196,34 @@ function formatFecha(fecha: string): string {
                   </div>
                 </div>
 
-                <!-- Fila 2: estado + acciones -->
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:pl-0">
-                  <StatusBadge :estado="cita.estado" />
+                <!-- Fila 2: estado + cambio de estado + botón editar -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <StatusBadge :status="cita.estado" />
 
-                  <select
-                    v-if="cita.estado !== 'completada' && cita.estado !== 'cancelada'"
-                    :value="cita.estado"
-                    @change="cambiarEstado(cita, ($event.target as HTMLSelectElement).value as EstadoCita)"
-                    class="w-full sm:w-auto text-xs border rounded-lg px-2 py-1.5
-                           focus:outline-none focus:ring-1 focus:ring-primary-400"
-                    style="border-color: var(--border-color); color: var(--text-secondary); background: var(--bg-card)"
-                    aria-label="Cambiar estado"
-                  >
-                    <option value="pendiente">Pendiente</option>
-                    <option value="confirmada">Confirmar</option>
-                    <option value="en_curso">En curso</option>
-                    <option value="completada">Completar</option>
-                    <option value="cancelada">Cancelar</option>
-                  </select>
+                  <div class="flex items-center gap-2">
+                    <AppSelect
+                      v-if="cita.estado !== 'completada' && cita.estado !== 'cancelada'"
+                      :model-value="cita.estado"
+                      :options="estadoCambioOptions"
+                      class="w-full sm:w-auto text-xs"
+                      aria-label="Cambiar estado"
+                      @update:model-value="cambiarEstado(cita, $event)"
+                    />
 
-                  <button
-                    @click="abrirEditar(cita)"
-                    class="flex items-center gap-1.5 w-full sm:w-auto justify-center sm:justify-start
-                           px-2 py-1.5 sm:p-1.5 rounded-lg text-xs transition-colors
-                           border sm:border-0"
-                    style="border-color: var(--border-color); color: var(--text-muted)"
-                    :style="{
-                      color: 'var(--text-muted)',
-                      hover: { color: 'var(--color-primary)', background: 'var(--bg-hover)' }
-                    }"
-                    title="Editar cita"
-                    aria-label="Editar cita"
-                  >
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    <span class="sm:hidden">Editar cita</span>
-                  </button>
+                    <AppButton
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Editar cita"
+                      title="Editar cita"
+                      @click="abrirEditar(cita)"
+                    >
+                      <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      <span class="sm:hidden">Editar</span>
+                    </AppButton>
+                  </div>
                 </div>
               </div>
             </div>

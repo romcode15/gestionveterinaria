@@ -7,6 +7,7 @@ import AppCard from '@/components/ui/AppCard.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import AppAlert from '@/components/ui/AppAlert.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
 import AppTable from '@/components/ui/AppTable.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
@@ -14,6 +15,7 @@ import AppBadge from '@/components/ui/AppBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import SearchToolbar from '@/components/common/SearchToolbar.vue'
 import EntityCard from '@/components/common/EntityCard.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
 
 import MascotaAvatar from '@/components/mascotas/MascotaAvatar.vue'
 import MascotaForm from '@/components/mascotas/MascotaForm.vue'
@@ -282,9 +284,9 @@ async function handleSubmit(data: MascotaFormData) {
 
             <!-- ACCIONES -->
             <template #actions="{ row }">
-              <button @click.stop="abrirEditar(row)" class="p-1.5 rounded-lg vg-icon-btn" title="Editar mascota">
+              <AppButton variant="ghost" size="sm" title="Editar mascota" @click.stop="abrirEditar(row)">
                 ✏️
-              </button>
+              </AppButton>
             </template>
           </AppTable>
         </div>
@@ -333,20 +335,18 @@ async function handleSubmit(data: MascotaFormData) {
             </template>
 
             <template #actions>
-              <button @click="abrirEditar(mascota)" class="p-1.5 rounded-lg vg-icon-btn">
+              <AppButton variant="ghost" size="sm" @click="abrirEditar(mascota)">
                 ✏️
-              </button>
+              </AppButton>
             </template>
           </EntityCard>
 
-          <div
+          <EmptyState
             v-if="mascotasStore.mascotas.length === 0 && !mascotasStore.loading"
-            class="col-span-full py-12 text-center"
-            style="color:var(--text-muted)"
-          >
-            🐾
-            <p>No se encontraron mascotas</p>
-          </div>
+            icon="🐾"
+            title="No se encontraron mascotas"
+            message="Intenta con otro filtro o registra una nueva mascota"
+          />
         </div>
 
         <!-- PAGINACION -->

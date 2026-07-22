@@ -12,6 +12,8 @@ import AppBadge from '@/components/ui/AppBadge.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import SearchToolbar from '@/components/common/SearchToolbar.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
+import FormActions from '@/components/forms/FormActions.vue'
 import { api } from '@/services/api'
 
 interface Vacuna {
@@ -169,9 +171,7 @@ const vacunasFiltradas = computed(() => {
           </h2>
         </div>
 
-        <div v-if="loading" class="p-4 space-y-3">
-          <div v-for="i in 4" :key="i" class="h-16 vg-skeleton rounded-xl animate-pulse" />
-        </div>
+        <LoadingState v-if="loading">Cargando vacunas...</LoadingState>
 
         <EmptyState
           v-else-if="vacunasFiltradas.length === 0"
@@ -206,7 +206,11 @@ const vacunasFiltradas = computed(() => {
                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
               </AppButton>
-              <AppButton size="sm" variant="ghost" :class="v.activo ? 'vg-icon-btn-danger' : 'vg-icon-btn'" @click="toggleEstado(v)">
+              <AppButton
+                size="sm"
+                :variant="v.activo ? 'danger' : 'ghost'"
+                @click="toggleEstado(v)"
+              >
                 {{ v.activo ? 'Desactivar' : 'Activar' }}
               </AppButton>
             </div>
@@ -241,10 +245,11 @@ const vacunasFiltradas = computed(() => {
           type="number"
           placeholder="Ej: 365"
         />
-        <div class="flex gap-3 justify-end pt-2">
-          <AppButton type="button" variant="ghost" @click="showModal = false">Cancelar</AppButton>
-          <AppButton type="submit" :loading="guardando">Guardar</AppButton>
-        </div>
+        <FormActions
+          :loading="guardando"
+          submit-label="Guardar"
+          @cancel="showModal = false"
+        />
       </form>
     </AppModal>
   </DashboardLayout>

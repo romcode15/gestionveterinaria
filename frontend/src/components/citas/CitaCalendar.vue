@@ -64,24 +64,26 @@ function seleccionarFecha(fecha: string) {
 </script>
 
 <template>
-  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+  <div class="vg-card rounded-2xl p-4">
     <!-- Header del calendario -->
     <div class="flex items-center justify-between mb-4">
       <button
         @click="mesAnterior"
-        class="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+        class="p-2 rounded-lg transition-colors vg-table-row-hover"
+        style="color: var(--text-muted)"
         aria-label="Mes anterior"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
       </button>
-      <h3 class="font-semibold text-slate-800">
+      <h3 class="font-semibold" style="color: var(--text-primary)">
         {{ nombresMes[mesActual.getMonth()] }} {{ mesActual.getFullYear() }}
       </h3>
       <button
         @click="mesSiguiente"
-        class="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+        class="p-2 rounded-lg transition-colors vg-table-row-hover"
+        style="color: var(--text-muted)"
         aria-label="Mes siguiente"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,7 +97,8 @@ function seleccionarFecha(fecha: string) {
       <div
         v-for="dia in diasSemana"
         :key="dia"
-        class="text-center text-xs font-semibold text-slate-400 py-1"
+        class="text-center text-xs font-semibold py-1"
+        style="color: var(--text-muted)"
       >
         {{ dia }}
       </div>
@@ -113,8 +116,11 @@ function seleccionarFecha(fecha: string) {
               ? 'bg-primary-600 text-white font-semibold shadow-sm'
               : dia.esHoy
               ? 'bg-primary-50 text-primary-700 font-semibold'
-              : 'text-slate-700 hover:bg-slate-100',
+              : 'vg-table-row-hover',
           ]"
+          :style="dia.fecha !== props.fechaSeleccionada && !dia.esHoy
+            ? { color: 'var(--text-secondary)' }
+            : {}"
           :aria-label="`${dia.dia} - ${citasPorFecha(dia.fecha).length} citas`"
           :aria-pressed="dia.fecha === props.fechaSeleccionada"
         >

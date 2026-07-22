@@ -53,7 +53,7 @@ function formatFecha(fecha: string): string {
 
     <div class="space-y-4">
       <!-- Stats con EntitySummary -->
-      <EntitySummary :items="summaryItems" :columns="4" />
+      <EntitySummary :items="summaryItems" />
 
       <!-- Lista -->
       <AppCard padding="none">
@@ -101,7 +101,7 @@ function formatFecha(fecha: string): string {
                 </div>
 
                 <div class="flex">
-                  <StatusBadge :estado="cita.estado" />
+                  <StatusBadge :status="cita.estado" />
                 </div>
               </div>
             </div>

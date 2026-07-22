@@ -12,6 +12,8 @@ import AppSelect from '@/components/ui/AppSelect.vue'
 
 import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
+import FormActions from '@/components/forms/FormActions.vue'
 
 import { api } from '@/services/api'
 import { useAuthStore } from '@/stores/auth.store'
@@ -230,16 +232,11 @@ const puedeEditar = computed(() =>
   <DashboardLayout>
     <template #header>
       <div class="flex items-center gap-2">
-        <button
-          class="p-1.5 rounded-lg transition-colors"
-          style="color: var(--text-muted)"
-          @click="router.back()"
-          aria-label="Volver"
-        >
+        <AppButton variant="ghost" size="sm" aria-label="Volver" @click="router.back()">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
           </svg>
-        </button>
+        </AppButton>
         <PageHeader
           :title="diagnostico ? `${diagnostico.mascotaNombre} · Tratamiento` : 'Tratamiento'"
           :subtitle="diagnostico ? diagnostico.citaFecha : 'Cargando...'"
@@ -279,10 +276,7 @@ const puedeEditar = computed(() =>
       </AppCard>
 
       <!-- Loading -->
-      <div v-if="loading" class="space-y-3">
-        <div class="h-32 vg-skeleton rounded-xl animate-pulse"/>
-        <div class="h-48 vg-skeleton rounded-xl animate-pulse"/>
-      </div>
+      <LoadingState v-if="loading">Cargando tratamiento...</LoadingState>
 
       <!-- Sin tratamiento registrado -->
       <EmptyState
@@ -441,9 +435,10 @@ const puedeEditar = computed(() =>
                 <span class="text-sm font-semibold" style="color: var(--text-secondary)">
                   Medicamento {{ i + 1 }}
                 </span>
-                <button
+                <AppButton
                   type="button"
-                  class="p-1.5 rounded-lg transition-colors vg-icon-btn-danger"
+                  variant="danger"
+                  size="sm"
                   @click="eliminarDetalle(i)"
                   aria-label="Eliminar medicamento"
                 >
@@ -451,7 +446,7 @@ const puedeEditar = computed(() =>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                   </svg>
-                </button>
+                </AppButton>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -501,19 +496,11 @@ const puedeEditar = computed(() =>
           </div>
         </AppCard>
 
-        <!-- Botones -->
-        <div class="flex gap-3 justify-end">
-          <AppButton
-            type="button"
-            variant="ghost"
-            @click="() => { modoEdicion = false; cargarFormDesdetratamiento() }"
-          >
-            Cancelar
-          </AppButton>
-          <AppButton type="submit" :loading="guardando">
-            {{ tratamiento ? 'Guardar cambios' : 'Registrar tratamiento' }}
-          </AppButton>
-        </div>
+        <FormActions
+          :loading="guardando"
+          :submit-label="tratamiento ? 'Guardar cambios' : 'Registrar tratamiento'"
+          @cancel="() => { modoEdicion = false; cargarFormDesdetratamiento() }"
+        />
       </form>
     </div>
   </DashboardLayout>

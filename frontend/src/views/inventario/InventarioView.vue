@@ -8,6 +8,7 @@ import AppAlert from '@/components/ui/AppAlert.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
 import { api } from '@/services/api'
 
 const router = useRouter()
@@ -110,10 +111,7 @@ function formatFecha(f: string) {
         </AppButton>
       </div>
 
-      <!-- Alertas -->
-      <div v-if="loading" class="space-y-3">
-        <div v-for="i in 3" :key="i" class="h-32 vg-skeleton rounded-xl animate-pulse" />
-      </div>
+      <LoadingState v-if="loading">Cargando alertas...</LoadingState>
 
       <template v-else-if="alertas">
         <!-- Stock bajo -->
