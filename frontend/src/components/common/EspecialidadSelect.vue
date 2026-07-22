@@ -33,7 +33,7 @@ function isSelected(id: number): boolean {
       <span class="text-danger-500 ml-0.5" aria-hidden="true">*</span>
     </label>
     <div
-      class="flex flex-wrap gap-2 p-3 rounded-lg min-h-[3.75rem]"
+      class="flex flex-wrap gap-2 p-3 rounded-lg min-h"
       style="border: 1px solid var(--border-strong)"
     >
       <button

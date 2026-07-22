@@ -6,7 +6,7 @@ import AppCard from '@/components/ui/AppCard.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppAlert from '@/components/ui/AppAlert.vue'
 import AppButton from '@/components/ui/AppButton.vue'
-import CitaStatusBadge from '@/components/citas/CitaStatusBadge.vue'
+import StatusBadge from '@/components/common/StatusBadge.vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useCitasStore } from '@/stores/citas.store'
 import { api } from '@/services/api'
@@ -245,7 +245,7 @@ function labelSiguienteEstado(estado: EstadoCita): string {
 
             <!-- Estado + acciones -->
             <div class="flex items-center gap-2 shrink-0 flex-wrap">
-              <CitaStatusBadge :estado="cita.estado" />
+              <StatusBadge :estado="cita.estado" />
 
               <!-- Botón de acción rápida (avanzar estado) -->
               <button

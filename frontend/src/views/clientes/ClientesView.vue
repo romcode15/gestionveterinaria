@@ -2,16 +2,28 @@
 import { ref, watch, onMounted } from 'vue'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import AppCard from '@/components/ui/AppCard.vue'
-import AppButton from '@/components/ui/AppButton.vue'
 import AppModal from '@/components/ui/AppModal.vue'
-import AppSearchInput from '@/components/ui/AppSearchInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import AppAlert from '@/components/ui/AppAlert.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
-import ClienteTable from '@/components/clientes/ClienteTable.vue'
+import AppTable from '@/components/ui/AppTable.vue'
+import AppBadge from '@/components/ui/AppBadge.vue'
+
+import PageHeader from '@/components/common/PageHeader.vue'
+import SearchToolbar from '@/components/common/SearchToolbar.vue'
+
 import ClienteForm from '@/components/clientes/ClienteForm.vue'
 import { useClientesStore } from '@/stores/clientes.store'
 import type { Cliente, ClienteFormData } from '@/types'
+
+// Definición de columnas para AppTable
+const columns = [
+  { key: 'cliente', label: 'Cliente' },
+  { key: 'documento', label: 'Documento' },
+  { key: 'contacto', label: 'Contacto' },
+  { key: 'mascotas', label: 'Mascotas', align: 'center' },
+  { key: 'estado', label: 'Estado', align: 'center' },
+] as const
 
 const clientesStore = useClientesStore()
 
@@ -22,14 +34,14 @@ watch([() => clientesStore.searchQuery, () => clientesStore.filtroEstado], () =>
   clientesStore.cargar({ page: 0 })
 })
 
-const showModal    = ref(false)
+const showModal = ref(false)
 const clienteEditando = ref<Cliente | null>(null)
-const successMessage  = ref('')
-const loading         = ref(false)
+const successMessage = ref('')
+const loading = ref(false)
 
 const estadoOptions = [
-  { value: 'todos',    label: 'Todos los estados' },
-  { value: 'activo',   label: 'Activos' },
+  { value: 'todos', label: 'Todos los estados' },
+  { value: 'activo', label: 'Activos' },
   { value: 'inactivo', label: 'Inactivos' },
 ]
 
@@ -60,7 +72,7 @@ async function handleSubmit(data: ClienteFormData) {
   }
 }
 
-async function handleEliminar(cliente: Cliente) {
+async function handleToggleEstado(cliente: Cliente) {
   await clientesStore.eliminar(cliente.id)
   successMessage.value = `Cliente ${cliente.nombre} ${cliente.apellido} desactivado`
   setTimeout(() => (successMessage.value = ''), 3000)
@@ -70,10 +82,7 @@ async function handleEliminar(cliente: Cliente) {
 <template>
   <DashboardLayout>
     <template #header>
-      <div>
-        <h1 class="text-lg font-semibold" style="color: var(--text-primary)">Clientes</h1>
-        <p class="text-xs" style="color: var(--text-muted)">Gestión de clientes registrados</p>
-      </div>
+      <PageHeader title="Clientes" subtitle="Gestión de clientes registrados" />
     </template>
 
     <div class="space-y-4">
@@ -88,33 +97,24 @@ async function handleEliminar(cliente: Cliente) {
         </AppAlert>
       </Transition>
 
-      <!-- Toolbar -->
-      <AppCard padding="sm">
-        <div class="flex flex-col gap-3">
-          <div class="flex flex-col sm:flex-row gap-3 w-full">
-            <AppSearchInput
-              v-model="clientesStore.searchQuery"
-              placeholder="Buscar por nombre, documento, email..."
-              class="w-full sm:flex-1"
-            />
-            <AppSelect
-              v-model="clientesStore.filtroEstado"
-              :options="estadoOptions"
-              class="w-full sm:w-48"
-            />
-          </div>
-          <div class="flex justify-end">
-            <AppButton @click="abrirCrear" class="w-full sm:w-auto">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Nuevo cliente
-            </AppButton>
-          </div>
-        </div>
-      </AppCard>
+      <!-- Toolbar con SearchToolbar -->
+      <SearchToolbar
+        v-model:search="clientesStore.searchQuery"
+        search-placeholder="Buscar por nombre, documento, email..."
+        :show-new-button="true"
+        new-button-label="Nuevo cliente"
+        @new="abrirCrear"
+      >
+        <template #filters>
+          <AppSelect
+            v-model="clientesStore.filtroEstado"
+            :options="estadoOptions"
+            class="w-full sm:w-48"
+          />
+        </template>
+      </SearchToolbar>
 
-      <!-- Tabla -->
+      <!-- Tabla con AppTable -->
       <AppCard padding="none">
         <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--border-color)">
           <h2 class="font-semibold" style="color: var(--text-primary)">
@@ -122,12 +122,83 @@ async function handleEliminar(cliente: Cliente) {
           </h2>
         </div>
 
-        <ClienteTable
-          :clientes="clientesStore.clientes"
+        <AppTable
+          :columns="columns"
+          :rows="clientesStore.clientes"
           :loading="clientesStore.loading"
-          @edit="abrirEditar"
-          @toggle-estado="handleEliminar"
-        />
+          empty-message="No se encontraron clientes"
+          @row-click="(row) => console.log('Fila clickeada', row)"
+        >
+          <!-- Columna Cliente (avatar + nombre + ciudad) -->
+          <template #cell-cliente="{ row }">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full vg-client-avatar flex items-center justify-center font-semibold text-sm shrink-0">
+                {{ row.nombre[0] }}{{ row.apellido[0] }}
+              </div>
+              <div>
+                <p class="font-medium" style="color: var(--text-primary)">{{ row.nombre }} {{ row.apellido }}</p>
+                <p class="text-xs" style="color: var(--text-muted)">{{ row.ciudad }}</p>
+              </div>
+            </div>
+          </template>
+
+          <!-- Columna Documento -->
+          <template #cell-documento="{ row }">
+            <span class="text-xs" style="color: var(--text-muted)">{{ row.tipoDocumento }}</span>
+            <p>{{ row.numeroDocumento }}</p>
+          </template>
+
+          <!-- Columna Contacto -->
+          <template #cell-contacto="{ row }">
+            <p style="color: var(--text-secondary)">{{ row.email }}</p>
+            <p class="text-xs" style="color: var(--text-muted)">{{ row.telefono }}</p>
+          </template>
+
+          <!-- Columna Mascotas (badge) -->
+          <template #cell-mascotas="{ row }">
+            <AppBadge :variant="row.numeroMascotas > 0 ? 'primary' : 'neutral'">
+              {{ row.numeroMascotas }}
+            </AppBadge>
+          </template>
+
+          <!-- Columna Estado (badge con dot) -->
+          <template #cell-estado="{ row }">
+            <AppBadge :variant="row.estado === 'activo' ? 'success' : 'neutral'" dot>
+              {{ row.estado === 'activo' ? 'Activo' : 'Inactivo' }}
+            </AppBadge>
+          </template>
+
+          <!-- Acciones (botones Editar / Activar-Inactivar) -->
+          <template #actions="{ row }">
+            <button
+              @click="abrirEditar(row)"
+              class="p-1.5 rounded-lg transition-colors vg-icon-btn"
+              title="Editar"
+              aria-label="Editar cliente"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+            <button
+              @click="handleToggleEstado(row)"
+              class="p-1.5 rounded-lg transition-colors"
+              :class="row.estado === 'activo' ? 'vg-icon-btn-danger' : 'vg-icon-btn'"
+              :title="row.estado === 'activo' ? 'Inactivar' : 'Activar'"
+              :aria-label="row.estado === 'activo' ? 'Inactivar cliente' : 'Activar cliente'"
+            >
+              <svg v-if="row.estado === 'activo'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+              <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+          </template>
+        </AppTable>
 
         <!-- Paginación -->
         <div class="px-4 border-t" style="border-color: var(--border-color)">

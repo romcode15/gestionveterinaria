@@ -11,6 +11,11 @@ import AppInput from '@/components/ui/AppInput.vue'
 import AppTextarea from '@/components/ui/AppTextarea.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
+
+import PageHeader from '@/components/common/PageHeader.vue'
+import SearchToolbar from '@/components/common/SearchToolbar.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+
 import { api } from '@/services/api'
 import type { SpringPage } from '@/services/api'
 
@@ -115,8 +120,7 @@ async function cargar(p = 0) {
       ? `/api/diagnosticos/mascota/${filtroMascotaId.value}`
       : '/api/diagnosticos'
 
-    // El endpoint /api/diagnosticos no existe como listado general,
-    // usamos el de la mascota si hay filtro, si no mostramos instrucción
+    // Si no hay filtro, mostramos estado vacío sin llamar a la API
     if (!filtroMascotaId.value) {
       diagnosticos.value  = []
       totalElements.value = 0
@@ -211,15 +215,23 @@ function formatFecha(f: string) {
     day: '2-digit', month: 'short', year: 'numeric',
   })
 }
+
+function limpiarFiltro() {
+  filtroMascotaId.value = null
+  diagnosticos.value = []
+  totalElements.value = 0
+  totalPages.value = 0
+  // Limpiar query param
+  if (route.query.mascotaId) {
+    router.replace({ query: {} })
+  }
+}
 </script>
 
 <template>
   <DashboardLayout>
     <template #header>
-      <div>
-        <h1 class="text-lg font-semibold" style="color: var(--text-primary)">Diagnósticos</h1>
-        <p class="text-xs" style="color: var(--text-muted)">Módulo clínico — registros de consultas</p>
-      </div>
+      <PageHeader title="Diagnósticos" subtitle="Módulo clínico — registros de consultas" />
     </template>
 
     <div class="space-y-4">
@@ -230,9 +242,13 @@ function formatFecha(f: string) {
         <AppAlert v-if="successMsg" type="success" dismissible @dismiss="successMsg = ''">{{ successMsg }}</AppAlert>
       </Transition>
 
-      <!-- Toolbar -->
-      <AppCard padding="sm">
-        <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+      <!-- Toolbar con SearchToolbar -->
+      <SearchToolbar
+        :show-new-button="true"
+        new-button-label="Nuevo diagnóstico"
+        @new="() => { resetForm(); showModal = true }"
+      >
+        <template #filters>
           <div class="flex items-center gap-2">
             <svg class="w-5 h-5" style="color: var(--text-muted)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
@@ -242,39 +258,33 @@ function formatFecha(f: string) {
               <span v-if="filtroMascotaId">Mostrando diagnósticos de la mascota #{{ filtroMascotaId }}</span>
               <span v-else>Busca por mascota para ver su historial, o registra un nuevo diagnóstico desde una cita</span>
             </span>
-          </div>
-          <div class="flex gap-2">
-            <AppButton v-if="filtroMascotaId" variant="secondary" @click="() => { filtroMascotaId = null; diagnosticos = [] }">
+            <AppButton
+              v-if="filtroMascotaId"
+              variant="secondary"
+              size="sm"
+              @click="limpiarFiltro"
+            >
               Limpiar filtro
             </AppButton>
-            <AppButton @click="() => { resetForm(); showModal = true }">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-              </svg>
-              Nuevo diagnóstico
-            </AppButton>
           </div>
-        </div>
-      </AppCard>
+        </template>
+      </SearchToolbar>
 
       <!-- Estado vacío sin filtro -->
-      <AppCard v-if="!filtroMascotaId && !loading" class="py-16 text-center">
-        <svg class="w-14 h-14 mx-auto mb-4" style="color: var(--text-disabled)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-        </svg>
-        <p class="font-medium" style="color: var(--text-secondary)">Accede desde el historial de una mascota</p>
-        <p class="text-sm mt-1" style="color: var(--text-muted)">
-          O registra un nuevo diagnóstico indicando el ID de la cita completada
-        </p>
-        <div class="mt-4">
+      <EmptyState
+        v-if="!filtroMascotaId && !loading"
+        icon="📋"
+        title="Accede desde el historial de una mascota"
+        message="O registra un nuevo diagnóstico indicando el ID de la cita completada"
+      >
+        <template #actions>
           <AppButton @click="router.push('/mascotas')">Ir a Mascotas</AppButton>
-        </div>
-      </AppCard>
+        </template>
+      </EmptyState>
 
       <!-- Lista de diagnósticos -->
       <AppCard v-else padding="none">
-        <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--border-default)">
+        <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--border-color)">
           <h2 class="font-semibold" style="color: var(--text-primary)">
             {{ totalElements }} diagnóstico(s)
           </h2>
@@ -284,11 +294,14 @@ function formatFecha(f: string) {
           <div v-for="i in 4" :key="i" class="h-16 vg-skeleton rounded-xl animate-pulse"/>
         </div>
 
-        <div v-else-if="diagnosticos.length === 0" class="py-12 text-center" style="color: var(--text-muted)">
-          No hay diagnósticos registrados para esta mascota
-        </div>
+        <EmptyState
+          v-else-if="diagnosticos.length === 0"
+          icon="🩺"
+          title="Sin diagnósticos"
+          message="No hay diagnósticos registrados para esta mascota"
+        />
 
-        <div v-else class="divide-y" style="border-color: var(--border-default)">
+        <div v-else class="divide-y" style="border-color: var(--border-color)">
           <div v-for="d in diagnosticos" :key="d.id">
             <!-- Fila -->
             <button
@@ -322,7 +335,7 @@ function formatFecha(f: string) {
             <div
               v-if="expandido === d.id"
               class="px-6 pb-5 border-t"
-              style="border-color: var(--border-default); background-color: var(--bg-surface-2)"
+              style="border-color: var(--border-color); background-color: var(--bg-surface-2)"
             >
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
                 <div>
@@ -347,7 +360,7 @@ function formatFecha(f: string) {
           </div>
         </div>
 
-        <div class="px-4 border-t" style="border-color: var(--border-default)">
+        <div class="px-4 border-t" style="border-color: var(--border-color)">
           <AppPagination
             :page="page" :total-pages="totalPages"
             :total-elements="totalElements" :page-size="pageSize"
@@ -360,8 +373,6 @@ function formatFecha(f: string) {
     <!-- Modal nuevo diagnóstico -->
     <AppModal v-model="showModal" title="Registrar diagnóstico" size="lg">
       <form class="space-y-4" @submit.prevent="guardar">
-
-        <!-- ID de cita -->
         <div>
           <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary)">
             ID de cita <span class="text-red-500">*</span>
@@ -377,7 +388,6 @@ function formatFecha(f: string) {
           </p>
         </div>
 
-        <!-- Síntomas -->
         <div>
           <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary)">
             Síntomas <span class="text-red-500">*</span>
@@ -390,7 +400,6 @@ function formatFecha(f: string) {
           />
         </div>
 
-        <!-- Diagnóstico -->
         <div>
           <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary)">
             Diagnóstico <span class="text-red-500">*</span>
@@ -403,7 +412,6 @@ function formatFecha(f: string) {
           />
         </div>
 
-        <!-- Fila: pronóstico + signos vitales -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary)">Pronóstico</label>
@@ -419,13 +427,11 @@ function formatFecha(f: string) {
           </div>
         </div>
 
-        <!-- Observaciones -->
         <div>
           <label class="block text-sm font-medium mb-1" style="color: var(--text-secondary)">Observaciones</label>
           <AppTextarea v-model="form.observaciones" placeholder="Notas adicionales..." rows="2" />
         </div>
 
-        <!-- Botones -->
         <div class="flex gap-3 justify-end pt-2">
           <AppButton type="button" variant="secondary" @click="showModal = false">Cancelar</AppButton>
           <AppButton type="submit" :loading="guardando">Guardar diagnóstico</AppButton>

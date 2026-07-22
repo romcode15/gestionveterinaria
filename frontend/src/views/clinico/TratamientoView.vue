@@ -9,6 +9,10 @@ import AppButton from '@/components/ui/AppButton.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppTextarea from '@/components/ui/AppTextarea.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
+
+import PageHeader from '@/components/common/PageHeader.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+
 import { api } from '@/services/api'
 import { useAuthStore } from '@/stores/auth.store'
 
@@ -103,10 +107,8 @@ async function cargarTratamiento() {
     tratamiento.value = await api.get<Tratamiento>(
       `/api/tratamientos/diagnostico/${diagnosticoId}`
     )
-    // Prellenar formulario con datos existentes
     cargarFormDesdetratamiento()
   } catch {
-    // 404 = aún no existe tratamiento, es válido
     tratamiento.value = null
   }
 }
@@ -231,7 +233,6 @@ const puedeEditar = computed(() =>
         <button
           class="p-1.5 rounded-lg transition-colors"
           style="color: var(--text-muted)"
-          :class="'hover:bg-(--bg-surface-2)'"
           @click="router.back()"
           aria-label="Volver"
         >
@@ -239,12 +240,10 @@ const puedeEditar = computed(() =>
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
           </svg>
         </button>
-        <div>
-          <h1 class="text-lg font-semibold" style="color: var(--text-primary)">Tratamiento</h1>
-          <p class="text-xs" style="color: var(--text-muted)">
-            {{ diagnostico ? `${diagnostico.mascotaNombre} · ${diagnostico.citaFecha}` : 'Cargando...' }}
-          </p>
-        </div>
+        <PageHeader
+          :title="diagnostico ? `${diagnostico.mascotaNombre} · Tratamiento` : 'Tratamiento'"
+          :subtitle="diagnostico ? diagnostico.citaFecha : 'Cargando...'"
+        />
       </div>
     </template>
 
@@ -286,25 +285,21 @@ const puedeEditar = computed(() =>
       </div>
 
       <!-- Sin tratamiento registrado -->
-      <AppCard
+      <EmptyState
         v-else-if="!tratamiento && !modoEdicion"
-        class="py-12 text-center"
+        icon="💊"
+        title="Aún no hay tratamiento registrado"
+        message="Registra el plan de medicación para esta consulta"
       >
-        <svg class="w-12 h-12 mx-auto mb-3" style="color: var(--text-disabled)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
-        </svg>
-        <p class="font-medium" style="color: var(--text-secondary)">Aún no hay tratamiento registrado</p>
-        <p class="text-sm mt-1" style="color: var(--text-muted)">Registra el plan de medicación para esta consulta</p>
-        <div v-if="puedeEditar" class="mt-4">
-          <AppButton @click="() => { agregarDetalle(); modoEdicion = true }">
+        <template #actions>
+          <AppButton v-if="puedeEditar" @click="() => { agregarDetalle(); modoEdicion = true }">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
             Registrar tratamiento
           </AppButton>
-        </div>
-      </AppCard>
+        </template>
+      </EmptyState>
 
       <!-- Vista de tratamiento (modo lectura) -->
       <template v-else-if="tratamiento && !modoEdicion">
@@ -322,7 +317,7 @@ const puedeEditar = computed(() =>
               </div>
               <div v-if="tratamiento.proximaVisita">
                 <p class="text-xs font-semibold uppercase tracking-wide" style="color: var(--text-muted)">Próxima visita</p>
-                <p class="text-sm font-medium mt-1 text-green-600">{{ tratamiento.proximaVisita }}</p>
+                <p class="text-sm font-medium mt-1" style="color: var(--color-primary)">{{ tratamiento.proximaVisita }}</p>
               </div>
             </div>
             <AppButton v-if="puedeEditar" variant="ghost" size="sm" @click="modoEdicion = true">
@@ -333,7 +328,7 @@ const puedeEditar = computed(() =>
               Editar
             </AppButton>
           </div>
-          <div v-if="tratamiento.instruccionesGenerales" class="mt-3 pt-3 border-t" style="border-color: var(--border-default)">
+          <div v-if="tratamiento.instruccionesGenerales" class="mt-3 pt-3 border-t" style="border-color: var(--border-color)">
             <p class="text-xs font-semibold uppercase tracking-wide mb-1" style="color: var(--text-muted)">Instrucciones generales</p>
             <p class="text-sm" style="color: var(--text-secondary)">{{ tratamiento.instruccionesGenerales }}</p>
           </div>
@@ -341,12 +336,12 @@ const puedeEditar = computed(() =>
 
         <!-- Líneas de medicamentos -->
         <AppCard padding="none">
-          <div class="px-6 py-4 border-b" style="border-color: var(--border-default)">
+          <div class="px-6 py-4 border-b" style="border-color: var(--border-color)">
             <h3 class="font-semibold" style="color: var(--text-primary)">
               Medicamentos ({{ tratamiento.detalles.length }})
             </h3>
           </div>
-          <div class="divide-y" style="border-color: var(--border-default)">
+          <div class="divide-y" style="border-color: var(--border-color)">
             <div
               v-for="(d, i) in tratamiento.detalles"
               :key="d.id ?? i"
@@ -415,7 +410,7 @@ const puedeEditar = computed(() =>
 
         <!-- Medicamentos -->
         <AppCard padding="none">
-          <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--border-default)">
+          <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--border-color)">
             <h3 class="font-semibold" style="color: var(--text-primary)">Medicamentos</h3>
             <AppButton type="button" size="sm" variant="secondary" @click="agregarDetalle">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -429,15 +424,14 @@ const puedeEditar = computed(() =>
             <p class="text-xs text-red-500">{{ formErrors.detalles }}</p>
           </div>
 
-          <div
+          <EmptyState
             v-if="form.detalles.length === 0"
-            class="py-10 text-center text-sm"
-            style="color: var(--text-muted)"
-          >
-            Haz clic en "Agregar" para añadir un medicamento
-          </div>
+            icon="💊"
+            title="Sin medicamentos"
+            message="Haz clic en 'Agregar' para añadir un medicamento"
+          />
 
-          <div v-else class="divide-y" style="border-color: var(--border-default)">
+          <div v-else class="divide-y" style="border-color: var(--border-color)">
             <div
               v-for="(d, i) in form.detalles"
               :key="i"

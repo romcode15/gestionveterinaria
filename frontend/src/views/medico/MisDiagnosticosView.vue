@@ -6,6 +6,10 @@ import AppCard from '@/components/ui/AppCard.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppAlert from '@/components/ui/AppAlert.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
+
+import PageHeader from '@/components/common/PageHeader.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+
 import { api } from '@/services/api'
 import type { SpringPage } from '@/services/api'
 
@@ -92,10 +96,7 @@ function formatFecha(f: string): string {
 <template>
   <DashboardLayout>
     <template #header>
-      <div>
-        <h1 class="text-lg font-semibold" style="color: var(--text-primary)">Mis Diagnósticos</h1>
-        <p class="text-xs" style="color: var(--text-muted)">Historial de consultas que has atendido</p>
-      </div>
+      <PageHeader title="Mis Diagnósticos" subtitle="Historial de consultas que has atendido" />
     </template>
 
     <div class="space-y-4">
@@ -105,7 +106,7 @@ function formatFecha(f: string): string {
 
       <!-- Tabla / lista de diagnósticos -->
       <AppCard padding="none">
-        <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--border-default)">
+        <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--border-color)">
           <h2 class="font-semibold" style="color: var(--text-primary)">
             {{ totalElements }} diagnóstico(s)
           </h2>
@@ -117,20 +118,15 @@ function formatFecha(f: string): string {
         </div>
 
         <!-- Sin datos -->
-        <div
+        <EmptyState
           v-else-if="diagnosticos.length === 0"
-          class="py-16 text-center"
-          style="color: var(--text-muted)"
-        >
-          <svg class="w-12 h-12 mx-auto mb-3" style="color: var(--text-disabled)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
-          <p>No has registrado diagnósticos aún</p>
-        </div>
+          icon="📋"
+          title="Sin diagnósticos"
+          message="No has registrado diagnósticos aún"
+        />
 
         <!-- Lista -->
-        <div v-else class="divide-y" style="border-color: var(--border-default)">
+        <div v-else class="divide-y" style="border-color: var(--border-color)">
           <div
             v-for="d in diagnosticos"
             :key="d.id"
@@ -192,7 +188,7 @@ function formatFecha(f: string): string {
             <div
               v-if="expandido === d.id"
               class="px-6 pb-5 border-t"
-              style="border-color: var(--border-default); background-color: var(--bg-surface-2)"
+              style="border-color: var(--border-color); background-color: var(--bg-surface-2)"
             >
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
                 <!-- Síntomas -->
@@ -242,7 +238,7 @@ function formatFecha(f: string): string {
         </div>
 
         <!-- Paginación -->
-        <div class="px-4 border-t" style="border-color: var(--border-default)">
+        <div class="px-4 border-t" style="border-color: var(--border-color)">
           <AppPagination
             :page="page"
             :total-pages="totalPages"

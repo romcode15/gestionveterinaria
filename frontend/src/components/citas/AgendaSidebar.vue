@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Cita } from '@/types'
-import CitaStatusBadge from './CitaStatusBadge.vue'
+import StatusBadge from '@/components/common/StatusBadge.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
 
 interface Props {
   citas: Cita[]
@@ -34,18 +35,15 @@ function formatFecha(fecha: string): string {
     </div>
 
     <div class="flex-1 overflow-y-auto" style="divide-color: var(--border-default)">
-      <div
+      <!-- Usar EmptyState -->
+      <EmptyState
         v-if="props.citas.length === 0"
-        class="flex flex-col items-center justify-center py-10 text-sm"
-        style="color: var(--text-muted)"
-      >
-        <svg class="w-8 h-8 mb-2" style="color: var(--text-disabled)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        Sin citas para este día
-      </div>
+        icon="📅"
+        title="Sin citas"
+        message="No hay citas programadas para este día"
+      />
 
+      <!-- Lista de citas -->
       <div
         v-for="cita in props.citas"
         :key="cita.id"
@@ -62,7 +60,7 @@ function formatFecha(fecha: string): string {
               <span class="text-xs font-semibold" style="color: var(--text-muted)">
                 {{ cita.horaInicio }} - {{ cita.horaFin }}
               </span>
-              <CitaStatusBadge :estado="cita.estado" size="sm" />
+              <StatusBadge :estado="cita.estado" size="sm" />
             </div>
             <p class="font-medium text-sm truncate" style="color: var(--text-primary)">{{ cita.mascotaNombre }}</p>
             <p class="text-xs truncate" style="color: var(--text-secondary)">{{ cita.tipoCita.nombre }}</p>

@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
-import AppButton from '@/components/ui/AppButton.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import AppAlert from '@/components/ui/AppAlert.vue'
+
+import PageHeader from '@/components/common/PageHeader.vue'
+import SearchToolbar from '@/components/common/SearchToolbar.vue'
+
 import CitaCalendar from '@/components/citas/CitaCalendar.vue'
 import AgendaSidebar from '@/components/citas/AgendaSidebar.vue'
 import CitaForm from '@/components/citas/CitaForm.vue'
@@ -60,10 +63,7 @@ async function handleSubmit(data: CitaFormData) {
 <template>
   <DashboardLayout>
     <template #header>
-      <div>
-        <h1 class="text-lg font-semibold text-slate-800">Agenda</h1>
-        <p class="text-xs text-slate-500">Vista de calendario</p>
-      </div>
+      <PageHeader title="Agenda" subtitle="Vista de calendario" />
     </template>
 
     <div class="space-y-4">
@@ -73,14 +73,12 @@ async function handleSubmit(data: CitaFormData) {
         </AppAlert>
       </Transition>
 
-      <div class="flex justify-end">
-        <AppButton @click="abrirCrear">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Nueva cita
-        </AppButton>
-      </div>
+      <!-- Toolbar sin búsqueda, solo botón nuevo -->
+      <SearchToolbar
+        :show-new-button="true"
+        new-button-label="Nueva cita"
+        @new="abrirCrear"
+      />
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <!-- Calendario -->
@@ -102,7 +100,6 @@ async function handleSubmit(data: CitaFormData) {
       </div>
     </div>
 
-    <!-- Modal -->
     <AppModal
       v-model="showModal"
       :title="citaEditando ? 'Editar cita' : 'Nueva cita'"

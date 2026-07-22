@@ -2,12 +2,16 @@
 import { ref, watch, onMounted } from 'vue'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import AppCard from '@/components/ui/AppCard.vue'
-import AppButton from '@/components/ui/AppButton.vue'
 import AppModal from '@/components/ui/AppModal.vue'
-import AppSearchInput from '@/components/ui/AppSearchInput.vue'
 import AppAlert from '@/components/ui/AppAlert.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
-import MedicoCard from '@/components/medicos/MedicoCard.vue'
+
+import PageHeader from '@/components/common/PageHeader.vue'
+import SearchToolbar from '@/components/common/SearchToolbar.vue'
+import EntitySummary from '@/components/common/EntitySummary.vue'
+import EntityCard from '@/components/common/EntityCard.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+
 import MedicoForm from '@/components/medicos/MedicoForm.vue'
 import { useMedicosStore } from '@/stores/medicos.store'
 import type { Medico, MedicoFormData } from '@/types'
@@ -25,10 +29,34 @@ watch(() => medicosStore.searchQuery, () => {
   medicosStore.cargar({ page: 0 })
 })
 
-const showModal       = ref(false)
-const medicoEditando  = ref<Medico | null>(null)
-const successMessage  = ref('')
-const loading         = ref(false)
+const showModal = ref(false)
+const medicoEditando = ref<Medico | null>(null)
+const successMessage = ref('')
+const loading = ref(false)
+
+// Estadísticas para EntitySummary
+const summaryItems = computed(() => [
+  { label: 'Total médicos', value: medicosStore.totalElements, icon: '👨‍⚕️' },
+  { label: 'Disponibles', value: medicosStore.medicos.filter((m) => m.disponible).length, icon: '✅' },
+  { label: 'No disponibles', value: medicosStore.medicos.filter((m) => !m.disponible).length, icon: '⛔' },
+  { label: 'Especialidades', value: medicosStore.especialidades.length, icon: '🏷️' },
+])
+
+// Paleta de avatares (igual que en MedicoCard)
+const avatarPalette = [
+  { bg: 'rgba(16,185,129,0.15)',  color: '#059669' },
+  { bg: 'rgba(20,184,166,0.15)',  color: '#0d9488' },
+  { bg: 'rgba(59,130,246,0.15)',  color: '#2563eb' },
+  { bg: 'rgba(168,85,247,0.15)',  color: '#7c3aed' },
+]
+
+function getAvatarPalette(id: number) {
+  return avatarPalette[id % avatarPalette.length]!
+}
+
+function getInitials(medico: Medico) {
+  return `${medico.nombre[0] ?? ''}${medico.apellido[0] ?? ''}`.toUpperCase()
+}
 
 function abrirCrear() {
   medicoEditando.value = null
@@ -61,10 +89,7 @@ async function handleSubmit(data: MedicoFormData) {
 <template>
   <DashboardLayout>
     <template #header>
-      <div>
-        <h1 class="text-lg font-semibold" style="color: var(--text-primary)">Médicos</h1>
-        <p class="text-xs" style="color: var(--text-muted)">Gestión del equipo médico</p>
-      </div>
+      <PageHeader title="Médicos" subtitle="Gestión del equipo médico" />
     </template>
 
     <div class="space-y-4">
@@ -79,48 +104,19 @@ async function handleSubmit(data: MedicoFormData) {
         </AppAlert>
       </Transition>
 
-      <!-- Toolbar -->
-      <AppCard padding="sm">
-        <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-          <AppSearchInput
-            v-model="medicosStore.searchQuery"
-            placeholder="Buscar por nombre, licencia, especialidad..."
-            class="sm:w-80"
-          />
-          <AppButton @click="abrirCrear">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Nuevo médico
-          </AppButton>
-        </div>
-      </AppCard>
+      <!-- Stats con EntitySummary -->
+      <EntitySummary :items="summaryItems" :columns="4" />
 
-      <!-- Stats -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <AppCard padding="sm">
-          <p class="text-2xl font-bold" style="color: var(--text-primary)">{{ medicosStore.totalElements }}</p>
-          <p class="text-xs mt-0.5" style="color: var(--text-muted)">Total médicos</p>
-        </AppCard>
-        <AppCard padding="sm">
-          <p class="text-2xl font-bold text-green-600">
-            {{ medicosStore.medicos.filter((m) => m.disponible).length }}
-          </p>
-          <p class="text-xs mt-0.5" style="color: var(--text-muted)">Disponibles</p>
-        </AppCard>
-        <AppCard padding="sm">
-          <p class="text-2xl font-bold" style="color: var(--text-muted)">
-            {{ medicosStore.medicos.filter((m) => !m.disponible).length }}
-          </p>
-          <p class="text-xs mt-0.5" style="color: var(--text-muted)">No disponibles</p>
-        </AppCard>
-        <AppCard padding="sm">
-          <p class="text-2xl font-bold text-blue-600">{{ medicosStore.especialidades.length }}</p>
-          <p class="text-xs mt-0.5" style="color: var(--text-muted)">Especialidades</p>
-        </AppCard>
-      </div>
+      <!-- Toolbar con SearchToolbar -->
+      <SearchToolbar
+        v-model:search="medicosStore.searchQuery"
+        search-placeholder="Buscar por nombre, licencia, especialidad..."
+        :show-new-button="true"
+        new-button-label="Nuevo médico"
+        @new="abrirCrear"
+      />
 
-      <!-- Grid de médicos + paginación -->
+      <!-- Grid de médicos -->
       <AppCard padding="none">
         <div class="px-6 py-4 border-b" style="border-color: var(--border-color)">
           <h2 class="font-semibold" style="color: var(--text-primary)">
@@ -128,20 +124,79 @@ async function handleSubmit(data: MedicoFormData) {
           </h2>
         </div>
 
-        <div v-if="medicosStore.medicos.length > 0" class="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          <MedicoCard
-            v-for="medico in medicosStore.medicos"
-            :key="medico.id"
-            :medico="medico"
-            @edit="abrirEditar"
+        <div class="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <template v-if="medicosStore.medicos.length > 0">
+            <EntityCard
+              v-for="medico in medicosStore.medicos"
+              :key="medico.id"
+              :title="`${medico.nombre} ${medico.apellido}`"
+              :subtitle="`Lic. ${medico.numeroLicencia}`"
+              :status="{
+                label: medico.disponible ? 'Disponible' : 'No disponible',
+                variant: medico.disponible ? 'success' : 'neutral',
+                dot: true,
+              }"
+            >
+              <template #avatar>
+                <div
+                  class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-base sm:text-lg font-bold shrink-0"
+                  :style="{
+                    backgroundColor: getAvatarPalette(medico.id).bg,
+                    color: getAvatarPalette(medico.id).color,
+                  }"
+                >
+                  {{ getInitials(medico) }}
+                </div>
+              </template>
+
+              <template #details>
+                <div class="flex flex-wrap gap-1.5 mt-2">
+                  <span
+                    v-for="esp in medico.especialidades"
+                    :key="esp.id"
+                    class="px-2 py-0.5 text-xs rounded-full font-medium vg-esp-tag"
+                    style="background-color: rgba(16,185,129,0.12); color: #059669;"
+                  >
+                    {{ esp.nombre }}
+                  </span>
+                </div>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 mt-3 text-xs" style="color: var(--text-muted)">
+                  <span class="flex items-center gap-1 min-w-0">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span class="truncate">{{ medico.email }}</span>
+                  </span>
+                  <span class="flex items-center gap-1 shrink-0">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    {{ medico.telefono }}
+                  </span>
+                </div>
+              </template>
+
+              <template #actions>
+                <div class="flex-1"></div>
+                <button
+                  @click="abrirEditar(medico)"
+                  class="p-1.5 rounded-lg transition-colors vg-icon-btn"
+                  title="Editar médico"
+                >
+                  ✏️
+                </button>
+              </template>
+            </EntityCard>
+          </template>
+
+          <EmptyState
+            v-else-if="!medicosStore.loading"
+            icon="👨‍⚕️"
+            title="No se encontraron médicos"
+            message="No hay médicos registrados que coincidan con la búsqueda"
           />
-        </div>
-        <div v-else-if="!medicosStore.loading" class="py-12 text-center" style="color: var(--text-muted)">
-          <svg class="w-12 h-12 mx-auto mb-3" style="color: var(--text-disabled)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-          No se encontraron médicos
         </div>
 
         <!-- Paginación -->

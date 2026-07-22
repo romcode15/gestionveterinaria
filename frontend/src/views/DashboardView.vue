@@ -9,7 +9,7 @@ import { useClientesStore } from '@/stores/clientes.store'
 import { useMascotasStore } from '@/stores/mascotas.store'
 import { useCitasStore } from '@/stores/citas.store'
 import { useMedicosStore } from '@/stores/medicos.store'
-import CitaStatusBadge from '@/components/citas/CitaStatusBadge.vue'
+import StatusBadge from '@/components/common/StatusBadge.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -148,7 +148,7 @@ const hora = computed(() => {
                   {{ cita.tipoCita.nombre }} · {{ cita.medicoNombre }}
                 </p>
               </div>
-              <CitaStatusBadge :estado="cita.estado" />
+              <StatusBadge :estado="cita.estado" />
             </div>
           </div>
         </AppCard>
