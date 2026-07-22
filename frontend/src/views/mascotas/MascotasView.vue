@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -7,6 +7,7 @@ import AppModal from '@/components/ui/AppModal.vue'
 import AppSearchInput from '@/components/ui/AppSearchInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import AppAlert from '@/components/ui/AppAlert.vue'
+import AppPagination from '@/components/ui/AppPagination.vue'
 import MascotaTable from '@/components/mascotas/MascotaTable.vue'
 import MascotaCard from '@/components/mascotas/MascotaCard.vue'
 import MascotaForm from '@/components/mascotas/MascotaForm.vue'
@@ -18,14 +19,22 @@ const mascotasStore = useMascotasStore()
 const clientesStore = useClientesStore()
 
 onMounted(async () => {
-  await Promise.all([mascotasStore.cargar(), clientesStore.cargar()])
+  await Promise.all([
+    mascotasStore.cargar({ page: 0 }),
+    mascotasStore.cargarCatalogos(),
+    clientesStore.cargar({ size: 200 }), // lista para el formulario
+  ])
 })
 
-const showModal = ref(false)
-const mascotaEditando = ref<Mascota | null>(null)
-const successMessage = ref('')
-const loading = ref(false)
-const vistaGrid = ref(false)
+watch(() => mascotasStore.searchQuery, () => {
+  mascotasStore.cargar({ page: 0 })
+})
+
+const showModal        = ref(false)
+const mascotaEditando  = ref<Mascota | null>(null)
+const successMessage   = ref('')
+const loading          = ref(false)
+const vistaGrid        = ref(false)
 
 const especieOptions = computed(() => [
   { value: '', label: 'Todas las especies' },
@@ -45,14 +54,11 @@ function abrirEditar(mascota: Mascota) {
 async function handleSubmit(data: MascotaFormData) {
   loading.value = true
   try {
-    // Enriquecer con nombre del cliente
-    const cliente = clientesStore.getById(data.clienteId)
     if (mascotaEditando.value) {
       await mascotasStore.actualizar(mascotaEditando.value.id, data)
       successMessage.value = 'Mascota actualizada correctamente'
     } else {
-      const nueva = await mascotasStore.crear(data)
-      if (cliente) nueva.clienteNombre = `${cliente.nombre} ${cliente.apellido}`
+      await mascotasStore.crear(data)
       successMessage.value = 'Mascota registrada correctamente'
     }
     showModal.value = false
@@ -61,22 +67,23 @@ async function handleSubmit(data: MascotaFormData) {
     loading.value = false
   }
 }
-
-function handleFiltroEspecie(val: string | number) {
-  mascotasStore.filtroEspecieId = val ? Number(val) : null
-}
 </script>
 
 <template>
   <DashboardLayout>
     <template #header>
       <div>
-        <h1 class="text-lg font-semibold text-slate-800">Mascotas</h1>
-        <p class="text-xs text-slate-500">Gestión de pacientes veterinarios</p>
+        <h1 class="text-lg font-semibold" style="color: var(--text-primary)">Mascotas</h1>
+        <p class="text-xs" style="color: var(--text-muted)">Gestión de pacientes veterinarios</p>
       </div>
     </template>
 
     <div class="space-y-4">
+      <Transition name="fade">
+        <AppAlert v-if="mascotasStore.error" type="error" dismissible @dismiss="mascotasStore.limpiarError()">
+          {{ mascotasStore.error }}
+        </AppAlert>
+      </Transition>
       <Transition name="fade">
         <AppAlert v-if="successMessage" type="success" dismissible @dismiss="successMessage = ''">
           {{ successMessage }}
@@ -86,7 +93,6 @@ function handleFiltroEspecie(val: string | number) {
       <!-- Toolbar -->
       <AppCard padding="sm">
         <div class="flex flex-col gap-3">
-          <!-- Fila 1: buscador + filtro especie -->
           <div class="flex flex-col sm:flex-row gap-3 w-full">
             <AppSearchInput
               v-model="mascotasStore.searchQuery"
@@ -97,16 +103,16 @@ function handleFiltroEspecie(val: string | number) {
               :model-value="mascotasStore.filtroEspecieId ?? ''"
               :options="especieOptions"
               class="w-full sm:w-48"
-              @update:model-value="handleFiltroEspecie"
+              @update:model-value="(v) => { mascotasStore.filtroEspecieId = v ? Number(v) : null }"
             />
           </div>
-          <!-- Fila 2: toggle vista + botón nueva mascota -->
           <div class="flex items-center justify-between gap-3 sm:justify-end">
-            <!-- Toggle vista tabla/grid -->
-            <div class="flex rounded-lg border border-slate-200 overflow-hidden shrink-0">
+            <!-- Toggle tabla/grid -->
+            <div class="flex rounded-lg overflow-hidden border" style="border-color: var(--border-color)">
               <button
                 @click="vistaGrid = false"
-                :class="['px-3 py-2 text-sm transition-colors', !vistaGrid ? 'bg-primary-600 text-white' : 'text-slate-500 hover:bg-slate-50']"
+                :class="['px-3 py-2 text-sm transition-colors', !vistaGrid ? 'bg-(--color-primary) text-white' : 'hover:bg-(--bg-hover)']"
+                :style="vistaGrid ? { color: 'var(--text-muted)' } : {}"
                 aria-label="Vista tabla"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -115,7 +121,8 @@ function handleFiltroEspecie(val: string | number) {
               </button>
               <button
                 @click="vistaGrid = true"
-                :class="['px-3 py-2 text-sm transition-colors', vistaGrid ? 'bg-primary-600 text-white' : 'text-slate-500 hover:bg-slate-50']"
+                :class="['px-3 py-2 text-sm transition-colors', vistaGrid ? 'bg-(--color-primary) text-white' : 'hover:bg-(--bg-hover)']"
+                :style="!vistaGrid ? { color: 'var(--text-muted)' } : {}"
                 aria-label="Vista tarjetas"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,16 +142,16 @@ function handleFiltroEspecie(val: string | number) {
 
       <!-- Contenido -->
       <AppCard padding="none">
-        <div class="px-6 py-4 border-b border-slate-100">
-          <h2 class="font-semibold text-slate-800">
-            {{ mascotasStore.mascotasFiltradas.length }} mascota(s)
+        <div class="px-6 py-4 border-b" style="border-color: var(--border-color)">
+          <h2 class="font-semibold" style="color: var(--text-primary)">
+            {{ mascotasStore.totalElements }} mascota(s)
           </h2>
         </div>
 
         <!-- Vista tabla -->
-        <div v-if="!vistaGrid" class="p-0">
+        <div v-if="!vistaGrid">
           <MascotaTable
-            :mascotas="mascotasStore.mascotasFiltradas"
+            :mascotas="mascotasStore.mascotas"
             :loading="mascotasStore.loading"
             @edit="abrirEditar"
           />
@@ -152,23 +159,34 @@ function handleFiltroEspecie(val: string | number) {
 
         <!-- Vista grid -->
         <div v-else class="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          <template v-if="mascotasStore.mascotasFiltradas.length > 0">
+          <template v-if="mascotasStore.mascotas.length > 0">
             <MascotaCard
-              v-for="mascota in mascotasStore.mascotasFiltradas"
+              v-for="mascota in mascotasStore.mascotas"
               :key="mascota.id"
               :mascota="mascota"
               @edit="abrirEditar"
             />
           </template>
-          <div v-else class="col-span-full py-12 text-center text-slate-400">
+          <div v-else-if="!mascotasStore.loading" class="col-span-full py-12 text-center" style="color: var(--text-muted)">
             <span class="text-4xl block mb-2">🐾</span>
             No se encontraron mascotas
           </div>
         </div>
+
+        <!-- Paginación -->
+        <div class="px-4 border-t" style="border-color: var(--border-color)">
+          <AppPagination
+            :page="mascotasStore.page"
+            :total-pages="mascotasStore.totalPages"
+            :total-elements="mascotasStore.totalElements"
+            :page-size="mascotasStore.pageSize"
+            :loading="mascotasStore.loading"
+            @change="mascotasStore.irAPagina"
+          />
+        </div>
       </AppCard>
     </div>
 
-    <!-- Modal -->
     <AppModal
       v-model="showModal"
       :title="mascotaEditando ? 'Editar mascota' : 'Nueva mascota'"

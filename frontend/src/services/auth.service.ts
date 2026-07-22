@@ -1,70 +1,56 @@
-import type { Usuario, Rol, Permiso } from '@/types'
-import usuariosJson from '@/data/json/usuarios.json'
-import rolesJson from '@/data/json/roles.json'
-import permisosJson from '@/data/json/permisos.json'
+import type { Usuario } from '@/types'
+import { api } from './api'
 
 const TOKEN_KEY = 'vet_token'
-const USER_KEY = 'vet_user'
+const USER_KEY  = 'vet_user'
 
-// ── helpers de resolución (simulan JOINs) ──────────────────────────────────
-
-function resolvePermisos(permisosIds: number[]): Permiso[] {
-  return permisosJson.filter((p) => permisosIds.includes(p.id)) as Permiso[]
-}
-
-function resolveRoles(rolesIds: number[]): Rol[] {
-  return rolesJson
-    .filter((r) => rolesIds.includes(r.id))
-    .map((r) => ({
-      id: r.id,
-      nombre: r.nombre as Rol['nombre'],
-      descripcion: r.descripcion,
-      permisos: resolvePermisos(r.permisosIds),
-    }))
-}
-
-function resolveUsuario(raw: (typeof usuariosJson)[number]): Usuario {
-  return {
-    id: raw.id,
-    username: raw.username,
-    email: raw.email,
-    nombre: raw.nombre,
-    apellido: raw.apellido,
-    activo: raw.activo,
-    ultimoAcceso: raw.ultimoAcceso,
-    clienteId: raw.clienteId ?? null,
-    roles: resolveRoles(raw.rolesIds),
+interface LoginResponse {
+  token: string
+  tipo: string
+  usuario: {
+    id: number
+    username: string
+    email: string
+    nombre: string
+    apellido: string
+    activo: boolean
+    clienteId: number | null
+    medicoId: number | null
+    roles: Array<{
+      id: number
+      nombre: string
+      descripcion: string
+      permisos: Array<{ id: number; nombre: string; descripcion: string; modulo: string }>
+    }>
   }
 }
 
-// ── utilidades de token ────────────────────────────────────────────────────
-
-function generateToken(userId: number): string {
-  return `mock_token_${userId}_${Date.now()}`
-}
-
-// ── API pública del servicio ───────────────────────────────────────────────
-
 export const authService = {
   async login(credentials: { username: string; password: string }): Promise<{ token: string; usuario: Usuario }> {
-    await new Promise((r) => setTimeout(r, 600)) // simula latencia
+    const res = await api.postPublic<LoginResponse>('/api/auth/login', credentials)
 
-    const rawUser = usuariosJson.find((u) => u.username === credentials.username)
-
-    if (!rawUser || rawUser.password !== credentials.password) {
-      throw new Error('Usuario o contraseña incorrectos')
+    const usuario: Usuario = {
+      id:           res.usuario.id,
+      username:     res.usuario.username,
+      email:        res.usuario.email,
+      nombre:       res.usuario.nombre,
+      apellido:     res.usuario.apellido,
+      activo:       res.usuario.activo,
+      clienteId:    res.usuario.clienteId,
+      medicoId:     res.usuario.medicoId,
+      ultimoAcceso: new Date().toISOString(),
+      roles: res.usuario.roles.map((r) => ({
+        id:          r.id,
+        nombre:      r.nombre as Usuario['roles'][number]['nombre'],
+        descripcion: r.descripcion,
+        permisos:    r.permisos,
+      })),
     }
-    if (!rawUser.activo) {
-      throw new Error('Usuario inactivo. Contacte al administrador.')
-    }
 
-    const usuario = resolveUsuario(rawUser)
-    const token = generateToken(usuario.id)
-
-    localStorage.setItem(TOKEN_KEY, token)
+    localStorage.setItem(TOKEN_KEY, res.token)
     localStorage.setItem(USER_KEY, JSON.stringify(usuario))
 
-    return { token, usuario }
+    return { token: res.token, usuario }
   },
 
   logout(): void {
@@ -86,47 +72,9 @@ export const authService = {
     }
   },
 
+  // El token JWT es válido si existe y no está vacío.
+  // La expiración real la controla el backend (86400000ms = 24h).
   isTokenValid(token: string): boolean {
-    return token.startsWith('mock_token_')
-  },
-
-  /**
-   * Crea automáticamente un usuario con rol cliente vinculado a un clienteId.
-   * Simula la transacción backend: INSERT usuario + asignar rol cliente.
-   */
-  crearUsuarioCliente(datos: {
-    nombre: string
-    apellido: string
-    email: string
-    clienteId: number
-  }): void {
-    const raw = usuariosJson as Array<{
-      id: number
-      username: string
-      password: string
-      email: string
-      nombre: string
-      apellido: string
-      activo: boolean
-      rolesIds: number[]
-      clienteId: number | null
-      ultimoAcceso: string
-    }>
-
-    const nextId = raw.length > 0 ? Math.max(...raw.map((u) => u.id)) + 1 : 1
-    const username = datos.email.split('@')[0]?.toLowerCase().replace(/[^a-z0-9.]/g, '') ?? `cliente${nextId}`
-
-    raw.push({
-      id: nextId,
-      username,
-      password: 'cli123',
-      email: datos.email,
-      nombre: datos.nombre,
-      apellido: datos.apellido,
-      activo: true,
-      rolesIds: [4], // rol cliente
-      clienteId: datos.clienteId,
-      ultimoAcceso: new Date().toISOString(),
-    })
+    return token.length > 0
   },
 }

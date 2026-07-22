@@ -1,9 +1,0 @@
-[
-  { "id": 1, "nombre": "Consulta General",       "duracionMinutos": 30,  "color": "#10b981", "descripcion": "Revisión general del paciente" },
-  { "id": 2, "nombre": "Vacunación",              "duracionMinutos": 15,  "color": "#3b82f6", "descripcion": "Aplicación de vacunas" },
-  { "id": 3, "nombre": "Cirugía",                 "duracionMinutos": 120, "color": "#f43f5e", "descripcion": "Procedimiento quirúrgico" },
-  { "id": 4, "nombre": "Control Post-operatorio", "duracionMinutos": 20,  "color": "#8b5cf6", "descripcion": "Seguimiento post cirugía" },
-  { "id": 5, "nombre": "Desparasitación",         "duracionMinutos": 15,  "color": "#f59e0b", "descripcion": "Tratamiento antiparasitario" },
-  { "id": 6, "nombre": "Baño y Peluquería",       "duracionMinutos": 60,  "color": "#06b6d4", "descripcion": "Servicio de estética" },
-  { "id": 7, "nombre": "Urgencia",                "duracionMinutos": 45,  "color": "#ef4444", "descripcion": "Atención de emergencia" }
-]

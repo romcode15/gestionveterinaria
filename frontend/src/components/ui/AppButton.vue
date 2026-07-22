@@ -54,7 +54,7 @@ const sizeClasses: Record<Size, string> = {
       sizeClasses[props.size],
       props.fullWidth ? 'w-full' : '',
       // ghost necesita color de texto dinámico
-      props.variant === 'ghost' ? 'text-[var(--text-secondary)]' : '',
+      props.variant === 'ghost' ? 'text-(--text-secondary)' : '',
     ]"
     :style="props.variant === 'ghost' ? 'color: var(--text-secondary)' : ''"
   >

@@ -23,6 +23,7 @@ export interface Usuario {
   activo: boolean
   roles: Rol[]
   clienteId: number | null
+  medicoId: number | null   // vinculación con tabla medicos (rol VETERINARIO)
   avatar?: string
   ultimoAcceso?: string
 }

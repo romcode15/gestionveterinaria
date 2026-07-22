@@ -1,93 +1,41 @@
 import type { Mascota, MascotaFormData, Especie, Raza } from '@/types'
-import mascotasJson from '@/data/json/mascotas.json'
-import especiesJson from '@/data/json/especies.json'
-import razasJson from '@/data/json/razas.json'
-import clientesJson from '@/data/json/clientes.json'
-
-// ── resolución de relaciones ───────────────────────────────────────────────
-
-function resolveMascota(raw: (typeof mascotasJson)[number]): Mascota {
-  const especie = especiesJson.find((e) => e.id === raw.especieId) as Especie
-  const raza = razasJson.find((r) => r.id === raw.razaId) as Raza
-  const cliente = clientesJson.find((c) => c.id === raw.clienteId)
-  const clienteNombre = cliente ? `${cliente.nombre} ${cliente.apellido}` : ''
-
-  return {
-    ...raw,
-    sexo: raw.sexo as Mascota['sexo'],
-    estado: raw.estado as Mascota['estado'],
-    especie,
-    raza,
-    clienteNombre,
-    observaciones: raw.observaciones ?? '',
-  }
-}
-
-// ── estado en memoria ──────────────────────────────────────────────────────
-
-type MascotaRaw = (typeof mascotasJson)[number]
-let db: MascotaRaw[] = mascotasJson.map((m) => ({ ...m }))
-
-function nextId(): number {
-  return db.length > 0 ? Math.max(...db.map((m) => m.id)) + 1 : 1
-}
-
-// ── API del servicio ───────────────────────────────────────────────────────
+import { api, type SpringPage, type PageParams } from './api'
 
 export const mascotasService = {
-  async getAll(): Promise<Mascota[]> {
-    await new Promise((r) => setTimeout(r, 300))
-    return db.map(resolveMascota)
+  getAll(params: PageParams = {}): Promise<SpringPage<Mascota>> {
+    return api.getPaged<Mascota>('/api/mascotas', { size: 20, sort: 'nombre', dir: 'asc', ...params })
   },
 
-  async getById(id: number): Promise<Mascota | undefined> {
-    await new Promise((r) => setTimeout(r, 150))
-    const raw = db.find((m) => m.id === id)
-    return raw ? resolveMascota(raw) : undefined
+  getById(id: number): Promise<Mascota> {
+    return api.get<Mascota>(`/api/mascotas/${id}`)
   },
 
-  async getByClienteId(clienteId: number): Promise<Mascota[]> {
-    await new Promise((r) => setTimeout(r, 200))
-    return db.filter((m) => m.clienteId === clienteId && m.estado === 'activo').map(resolveMascota)
+  getByClienteId(clienteId: number, params: PageParams = {}): Promise<SpringPage<Mascota>> {
+    return api.getPaged<Mascota>(`/api/mascotas/cliente/${clienteId}`, params)
   },
 
-  async getAllEspecies(): Promise<Especie[]> {
-    await new Promise((r) => setTimeout(r, 150))
-    return [...especiesJson] as Especie[]
+  buscar(nombre: string, params: PageParams = {}): Promise<SpringPage<Mascota>> {
+    return api.getPaged<Mascota>(`/api/mascotas/buscar?nombre=${encodeURIComponent(nombre)}`, params)
   },
 
-  async getAllRazas(): Promise<Raza[]> {
-    await new Promise((r) => setTimeout(r, 150))
-    return [...razasJson] as Raza[]
+  // Catálogos — listas pequeñas, sin paginar
+  getAllEspecies(): Promise<Especie[]> {
+    return api.get<Especie[]>('/api/catalogos/especies')
   },
 
-  async create(data: MascotaFormData): Promise<Mascota> {
-    await new Promise((r) => setTimeout(r, 500))
-    const raw: MascotaRaw = {
-      id: nextId(),
-      nombre: data.nombre,
-      especieId: data.especieId,
-      razaId: data.razaId,
-      sexo: data.sexo,
-      fechaNacimiento: data.fechaNacimiento ?? '',
-      color: data.color ?? '',
-      peso: data.peso ?? 0,
-      microchip: data.microchip ?? '',
-      esterilizado: data.esterilizado,
-      estado: 'activo',
-      clienteId: data.clienteId,
-      observaciones: data.observaciones ?? '',
-      createdAt: new Date().toISOString(),
-    }
-    db.push(raw)
-    return resolveMascota(raw)
+  getAllRazas(): Promise<Raza[]> {
+    return api.get<Raza[]>('/api/catalogos/razas')
   },
 
-  async update(id: number, data: Partial<MascotaFormData>): Promise<Mascota> {
-    await new Promise((r) => setTimeout(r, 500))
-    const idx = db.findIndex((m) => m.id === id)
-    if (idx === -1) throw new Error(`Mascota ${id} no encontrada`)
-    db[idx] = { ...db[idx]!, ...data }
-    return resolveMascota(db[idx]!)
+  create(data: MascotaFormData): Promise<Mascota> {
+    return api.post<Mascota>('/api/mascotas', data)
+  },
+
+  update(id: number, data: Partial<MascotaFormData>): Promise<Mascota> {
+    return api.put<Mascota>(`/api/mascotas/${id}`, data)
+  },
+
+  delete(id: number): Promise<void> {
+    return api.delete(`/api/mascotas/${id}`)
   },
 }

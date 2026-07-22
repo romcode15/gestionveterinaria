@@ -31,7 +31,11 @@ export const useAuthStore = defineStore('auth', () => {
   // clienteId del usuario logueado (solo existe si el rol es 'cliente')
   const clienteId = computed<number | null>(() => usuario.value?.clienteId ?? null)
 
-  const isCliente = computed(() => roles.value.includes('cliente'))
+  // medicoId del usuario logueado (solo existe si el rol es 'veterinario')
+  const medicoId = computed<number | null>(() => usuario.value?.medicoId ?? null)
+
+  const isCliente  = computed(() => roles.value.includes('cliente'))
+  const isMedico   = computed(() => roles.value.includes('veterinario'))
 
   function hasRole(roleName: RoleName): boolean {
     return roles.value.includes(roleName)
@@ -90,7 +94,9 @@ export const useAuthStore = defineStore('auth', () => {
     roles,
     permisos,
     clienteId,
+    medicoId,
     isCliente,
+    isMedico,
     hasRole,
     hasPermiso,
     isAdmin,

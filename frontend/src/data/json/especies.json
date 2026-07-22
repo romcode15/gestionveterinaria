@@ -1,8 +1,0 @@
-[
-  { "id": 1, "nombre": "Perro", "descripcion": "Canis lupus familiaris" },
-  { "id": 2, "nombre": "Gato", "descripcion": "Felis catus" },
-  { "id": 3, "nombre": "Conejo", "descripcion": "Oryctolagus cuniculus" },
-  { "id": 4, "nombre": "Ave", "descripcion": "Aves domésticas" },
-  { "id": 5, "nombre": "Reptil", "descripcion": "Reptiles domésticos" },
-  { "id": 6, "nombre": "Hámster", "descripcion": "Cricetinae" }
-]

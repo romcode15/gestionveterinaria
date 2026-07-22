@@ -1,50 +1,33 @@
 import type { Cliente, ClienteFormData } from '@/types'
-import clientesJson from '@/data/json/clientes.json'
-
-// Estado en memoria — simula la tabla de la BD durante la sesión
-let db: Cliente[] = clientesJson.map((c) => ({ ...c } as Cliente))
-
-function nextId(): number {
-  return db.length > 0 ? Math.max(...db.map((c) => c.id)) + 1 : 1
-}
+import { api, type SpringPage, type PageParams } from './api'
 
 export const clientesService = {
-  async getAll(): Promise<Cliente[]> {
-    await new Promise((r) => setTimeout(r, 300))
-    return [...db]
+  getAll(params: PageParams = {}): Promise<SpringPage<Cliente>> {
+    return api.getPaged<Cliente>('/api/clientes', { size: 20, sort: 'apellido', dir: 'asc', ...params })
   },
 
-  async getById(id: number): Promise<Cliente | undefined> {
-    await new Promise((r) => setTimeout(r, 150))
-    return db.find((c) => c.id === id)
+  buscar(nombre: string, params: PageParams = {}): Promise<SpringPage<Cliente>> {
+    return api.getPaged<Cliente>(`/api/clientes/buscar?nombre=${encodeURIComponent(nombre)}`, params)
   },
 
-  async create(data: ClienteFormData): Promise<Cliente> {
-    await new Promise((r) => setTimeout(r, 500))
-    const nuevo: Cliente = {
-      ...data,
-      id: nextId(),
-      estado: 'activo',
-      numeroMascotas: 0,
-      createdAt: new Date().toISOString(),
-    }
-    db.push(nuevo)
-    return { ...nuevo }
+  porEstado(estado: 'activo' | 'inactivo', params: PageParams = {}): Promise<SpringPage<Cliente>> {
+    return api.getPaged<Cliente>(`/api/clientes/estado/${estado}`, params)
   },
 
-  async update(id: number, data: Partial<ClienteFormData>): Promise<Cliente> {
-    await new Promise((r) => setTimeout(r, 500))
-    const idx = db.findIndex((c) => c.id === id)
-    if (idx === -1) throw new Error(`Cliente ${id} no encontrado`)
-    db[idx] = { ...db[idx]!, ...data }
-    return { ...db[idx]! }
+  getById(id: number): Promise<Cliente> {
+    return api.get<Cliente>(`/api/clientes/${id}`)
   },
 
-  async toggleEstado(id: number): Promise<Cliente> {
-    await new Promise((r) => setTimeout(r, 200))
-    const cliente = db.find((c) => c.id === id)
-    if (!cliente) throw new Error(`Cliente ${id} no encontrado`)
-    cliente.estado = cliente.estado === 'activo' ? 'inactivo' : 'activo'
-    return { ...cliente }
+  create(data: ClienteFormData): Promise<Cliente> {
+    return api.post<Cliente>('/api/clientes', data)
+  },
+
+  update(id: number, data: Partial<ClienteFormData>): Promise<Cliente> {
+    return api.put<Cliente>(`/api/clientes/${id}`, data)
+  },
+
+  // Borrado lógico — cambia estado a 'inactivo'
+  delete(id: number): Promise<void> {
+    return api.delete(`/api/clientes/${id}`)
   },
 }

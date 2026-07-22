@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -7,6 +7,7 @@ import AppModal from '@/components/ui/AppModal.vue'
 import AppSearchInput from '@/components/ui/AppSearchInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import AppAlert from '@/components/ui/AppAlert.vue'
+import AppPagination from '@/components/ui/AppPagination.vue'
 import ClienteTable from '@/components/clientes/ClienteTable.vue'
 import ClienteForm from '@/components/clientes/ClienteForm.vue'
 import { useClientesStore } from '@/stores/clientes.store'
@@ -14,16 +15,21 @@ import type { Cliente, ClienteFormData } from '@/types'
 
 const clientesStore = useClientesStore()
 
-onMounted(() => clientesStore.cargar())
+onMounted(() => clientesStore.cargar({ page: 0 }))
 
-const showModal = ref(false)
+// Recargar al cambiar filtros — vuelve siempre a página 0
+watch([() => clientesStore.searchQuery, () => clientesStore.filtroEstado], () => {
+  clientesStore.cargar({ page: 0 })
+})
+
+const showModal    = ref(false)
 const clienteEditando = ref<Cliente | null>(null)
-const successMessage = ref('')
-const loading = ref(false)
+const successMessage  = ref('')
+const loading         = ref(false)
 
 const estadoOptions = [
-  { value: 'todos', label: 'Todos los estados' },
-  { value: 'activo', label: 'Activos' },
+  { value: 'todos',    label: 'Todos los estados' },
+  { value: 'activo',   label: 'Activos' },
   { value: 'inactivo', label: 'Inactivos' },
 ]
 
@@ -54,9 +60,9 @@ async function handleSubmit(data: ClienteFormData) {
   }
 }
 
-async function handleToggleEstado(cliente: Cliente) {
-  await clientesStore.toggleEstado(cliente.id)
-  successMessage.value = `Cliente ${cliente.estado === 'activo' ? 'inactivado' : 'activado'} correctamente`
+async function handleEliminar(cliente: Cliente) {
+  await clientesStore.eliminar(cliente.id)
+  successMessage.value = `Cliente ${cliente.nombre} ${cliente.apellido} desactivado`
   setTimeout(() => (successMessage.value = ''), 3000)
 }
 </script>
@@ -65,13 +71,17 @@ async function handleToggleEstado(cliente: Cliente) {
   <DashboardLayout>
     <template #header>
       <div>
-        <h1 class="text-lg font-semibold text-slate-800">Clientes</h1>
-        <p class="text-xs text-slate-500">Gestión de clientes registrados</p>
+        <h1 class="text-lg font-semibold" style="color: var(--text-primary)">Clientes</h1>
+        <p class="text-xs" style="color: var(--text-muted)">Gestión de clientes registrados</p>
       </div>
     </template>
 
     <div class="space-y-4">
-      <!-- Alert de éxito -->
+      <Transition name="fade">
+        <AppAlert v-if="clientesStore.error" type="error" dismissible @dismiss="clientesStore.limpiarError()">
+          {{ clientesStore.error }}
+        </AppAlert>
+      </Transition>
       <Transition name="fade">
         <AppAlert v-if="successMessage" type="success" dismissible @dismiss="successMessage = ''">
           {{ successMessage }}
@@ -81,7 +91,6 @@ async function handleToggleEstado(cliente: Cliente) {
       <!-- Toolbar -->
       <AppCard padding="sm">
         <div class="flex flex-col gap-3">
-          <!-- Fila 1: buscador + filtro (siempre apilados en móvil, fila en sm+) -->
           <div class="flex flex-col sm:flex-row gap-3 w-full">
             <AppSearchInput
               v-model="clientesStore.searchQuery"
@@ -94,7 +103,6 @@ async function handleToggleEstado(cliente: Cliente) {
               class="w-full sm:w-48"
             />
           </div>
-          <!-- Fila 2: botón alineado a la derecha -->
           <div class="flex justify-end">
             <AppButton @click="abrirCrear" class="w-full sm:w-auto">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,21 +116,33 @@ async function handleToggleEstado(cliente: Cliente) {
 
       <!-- Tabla -->
       <AppCard padding="none">
-        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h2 class="font-semibold text-slate-800">
-            {{ clientesStore.clientesFiltrados.length }} cliente(s)
+        <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--border-color)">
+          <h2 class="font-semibold" style="color: var(--text-primary)">
+            {{ clientesStore.totalElements }} cliente(s)
           </h2>
         </div>
+
         <ClienteTable
-          :clientes="clientesStore.clientesFiltrados"
+          :clientes="clientesStore.clientes"
           :loading="clientesStore.loading"
           @edit="abrirEditar"
-          @toggle-estado="handleToggleEstado"
+          @toggle-estado="handleEliminar"
         />
+
+        <!-- Paginación -->
+        <div class="px-4 border-t" style="border-color: var(--border-color)">
+          <AppPagination
+            :page="clientesStore.page"
+            :total-pages="clientesStore.totalPages"
+            :total-elements="clientesStore.totalElements"
+            :page-size="clientesStore.pageSize"
+            :loading="clientesStore.loading"
+            @change="clientesStore.irAPagina"
+          />
+        </div>
       </AppCard>
     </div>
 
-    <!-- Modal -->
     <AppModal
       v-model="showModal"
       :title="clienteEditando ? 'Editar cliente' : 'Nuevo cliente'"

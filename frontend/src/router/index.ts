@@ -4,13 +4,13 @@ import { useAuthStore } from '@/stores/auth.store'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // Redireccion raíz
+    // ── Raíz ──────────────────────────────────────────────────────────────
     {
       path: '/',
       redirect: '/dashboard',
     },
 
-    // Auth
+    // ── Auth ───────────────────────────────────────────────────────────────
     {
       path: '/login',
       name: 'login',
@@ -23,7 +23,7 @@ const router = createRouter({
       component: () => import('@/views/auth/UnauthorizedView.vue'),
     },
 
-    // Dashboard admin/staff
+    // ── Dashboard admin/staff (con datos reales del backend) ───────────────
     {
       path: '/dashboard',
       name: 'dashboard',
@@ -31,21 +31,41 @@ const router = createRouter({
       meta: { requiresAuth: true, rolesExcluidos: ['cliente'] },
     },
 
-    // Portal cliente
+    // ── Portal Cliente ─────────────────────────────────────────────────────
     {
       path: '/mi-portal',
       name: 'cliente-dashboard',
       component: () => import('@/views/cliente/ClienteDashboardView.vue'),
-      meta: { requiresAuth: true, permiso: 'cliente.mis-mascotas' },
+      meta: { requiresAuth: true, permiso: 'cliente.mis_mascotas' },
     },
     {
       path: '/mis-citas',
       name: 'mis-citas',
       component: () => import('@/views/cliente/MisCitasView.vue'),
-      meta: { requiresAuth: true, permiso: 'cliente.mis-citas' },
+      meta: { requiresAuth: true, permiso: 'cliente.mis_citas' },
+    },
+    {
+      path: '/mis-mascotas/:id/historial',
+      name: 'mi-historial-clinico',
+      component: () => import('@/views/cliente/MiHistorialClinicoView.vue'),
+      meta: { requiresAuth: true, permiso: 'cliente.mis_mascotas' },
     },
 
-    // Módulo Personas - Clientes
+    // ── Portal Médico ──────────────────────────────────────────────────────
+    {
+      path: '/mi-agenda',
+      name: 'medico-agenda',
+      component: () => import('@/views/medico/MiAgendaView.vue'),
+      meta: { requiresAuth: true, roles: ['veterinario'] },
+    },
+    {
+      path: '/mis-diagnosticos',
+      name: 'medico-diagnosticos',
+      component: () => import('@/views/medico/MisDiagnosticosView.vue'),
+      meta: { requiresAuth: true, roles: ['veterinario'] },
+    },
+
+    // ── Módulo Clientes ────────────────────────────────────────────────────
     {
       path: '/clientes',
       name: 'clientes',
@@ -53,7 +73,7 @@ const router = createRouter({
       meta: { requiresAuth: true, permiso: 'clientes.ver' },
     },
 
-    // Módulo Personas - Médicos
+    // ── Módulo Médicos ─────────────────────────────────────────────────────
     {
       path: '/medicos',
       name: 'medicos',
@@ -61,7 +81,7 @@ const router = createRouter({
       meta: { requiresAuth: true, permiso: 'medicos.ver' },
     },
 
-    // Módulo Mascotas
+    // ── Módulo Mascotas ────────────────────────────────────────────────────
     {
       path: '/mascotas',
       name: 'mascotas',
@@ -69,7 +89,7 @@ const router = createRouter({
       meta: { requiresAuth: true, permiso: 'mascotas.ver' },
     },
 
-    // Módulo Citas
+    // ── Módulo Citas ───────────────────────────────────────────────────────
     {
       path: '/citas',
       name: 'citas',
@@ -83,7 +103,69 @@ const router = createRouter({
       meta: { requiresAuth: true, permiso: 'citas.ver' },
     },
 
-    // 404
+    // ── Módulo Clínico (Fase 1) ────────────────────────────────────────────
+    {
+      path: '/diagnosticos',
+      name: 'diagnosticos',
+      component: () => import('@/views/clinico/DiagnosticosView.vue'),
+      meta: { requiresAuth: true, roles: ['admin', 'veterinario', 'recepcionista'] },
+    },
+    {
+      path: '/diagnosticos/:id/tratamiento',
+      name: 'tratamiento',
+      component: () => import('@/views/clinico/TratamientoView.vue'),
+      meta: { requiresAuth: true, roles: ['admin', 'veterinario'] },
+    },
+    {
+      path: '/mascotas/:id/historial',
+      name: 'historial-clinico',
+      component: () => import('@/views/clinico/HistorialClinicoView.vue'),
+      meta: { requiresAuth: true, roles: ['admin', 'veterinario', 'recepcionista'] },
+    },
+
+    // ── Módulo Vacunación (Fase 2) ─────────────────────────────────────────
+    {
+      path: '/vacunacion',
+      name: 'vacunacion',
+      component: () => import('@/views/vacunacion/VacunacionView.vue'),
+      meta: { requiresAuth: true, roles: ['admin', 'veterinario', 'recepcionista'] },
+    },
+    {
+      path: '/vacunas',
+      name: 'vacunas',
+      component: () => import('@/views/vacunacion/VacunasView.vue'),
+      meta: { requiresAuth: true, roles: ['admin', 'veterinario'] },
+    },
+
+    // ── Módulo Inventario (Fase 3) ─────────────────────────────────────────
+    {
+      path: '/inventario',
+      name: 'inventario',
+      component: () => import('@/views/inventario/InventarioView.vue'),
+      meta: { requiresAuth: true, roles: ['admin', 'veterinario', 'recepcionista'] },
+    },
+    {
+      path: '/inventario/productos',
+      name: 'productos',
+      component: () => import('@/views/inventario/ProductosView.vue'),
+      meta: { requiresAuth: true, roles: ['admin', 'veterinario', 'recepcionista'] },
+    },
+    {
+      path: '/inventario/proveedores',
+      name: 'proveedores',
+      component: () => import('@/views/inventario/ProveedoresView.vue'),
+      meta: { requiresAuth: true, roles: ['admin', 'recepcionista'] },
+    },
+
+    // ── Auditoría (Fase 5) — solo ADMIN ───────────────────────────────────
+    {
+      path: '/auditoria',
+      name: 'auditoria',
+      component: () => import('@/views/auditoria/AuditoriaView.vue'),
+      meta: { requiresAuth: true, roles: ['admin'] },
+    },
+
+    // ── 404 ────────────────────────────────────────────────────────────────
     {
       path: '/:pathMatch(.*)*',
       redirect: '/dashboard',
@@ -91,7 +173,8 @@ const router = createRouter({
   ],
 })
 
-// Navigation guard
+// ── Navigation Guard ───────────────────────────────────────────────────────
+
 router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore()
 
@@ -100,22 +183,26 @@ router.beforeEach((to, _from, next) => {
     authStore.initFromStorage()
   }
 
-  // Ruta que requiere estar autenticado
+  // Ruta que requiere autenticación
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return next({ name: 'login', query: { redirect: to.fullPath } })
   }
 
-  // Ruta solo para invitados (login) → redirigir al portal correcto según rol
+  // Ruta solo para invitados (login) → redirigir al portal correcto
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    if (authStore.isCliente) {
-      return next({ name: 'cliente-dashboard' })
-    }
+    if (authStore.isCliente) return next({ name: 'cliente-dashboard' })
+    if (authStore.isMedico)  return next({ name: 'medico-agenda' })
     return next({ name: 'dashboard' })
   }
 
-  // Un cliente que intenta entrar al /dashboard general → redirigir a su portal
+  // Cliente intentando entrar al dashboard general → su portal
   if (to.name === 'dashboard' && authStore.isAuthenticated && authStore.isCliente) {
     return next({ name: 'cliente-dashboard' })
+  }
+
+  // Médico intentando entrar al dashboard general → su agenda
+  if (to.name === 'dashboard' && authStore.isAuthenticated && authStore.isMedico) {
+    return next({ name: 'medico-agenda' })
   }
 
   // Rutas excluidas para ciertos roles
@@ -124,6 +211,13 @@ router.beforeEach((to, _from, next) => {
     if (authStore.roles.some((r) => excluidos.includes(r))) {
       return next({ name: 'unauthorized' })
     }
+  }
+
+  // Rutas que requieren uno de los roles especificados
+  if (to.meta.roles && authStore.isAuthenticated) {
+    const rolesRequeridos = to.meta.roles as string[]
+    const tieneRol = authStore.roles.some((r) => rolesRequeridos.includes(r))
+    if (!tieneRol) return next({ name: 'unauthorized' })
   }
 
   // Verificar permiso específico

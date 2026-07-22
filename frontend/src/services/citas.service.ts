@@ -1,102 +1,49 @@
 import type { Cita, CitaFormData, EstadoCita, TipoCita } from '@/types'
-import citasJson from '@/data/json/citas.json'
-import tiposCitaJson from '@/data/json/tipos-cita.json'
-import medicosJson from '@/data/json/medicos.json'
-import mascotasJson from '@/data/json/mascotas.json'
-import clientesJson from '@/data/json/clientes.json'
-
-// ── resolución de relaciones ───────────────────────────────────────────────
-
-function resolveCita(raw: (typeof citasJson)[number]): Cita {
-  const tipoCita = tiposCitaJson.find((t) => t.id === raw.tipoCitaId) as TipoCita
-  const medico = medicosJson.find((m) => m.id === raw.medicoId)
-  const mascota = mascotasJson.find((m) => m.id === raw.mascotaId)
-  const cliente = clientesJson.find((c) => c.id === raw.clienteId)
-
-  return {
-    ...raw,
-    estado: raw.estado as EstadoCita,
-    tipoCita,
-    medicoNombre: medico ? `${medico.nombre} ${medico.apellido}` : '',
-    mascotaNombre: mascota?.nombre ?? '',
-    clienteNombre: cliente ? `${cliente.nombre} ${cliente.apellido}` : '',
-    observaciones: raw.observaciones ?? '',
-  }
-}
-
-function calcularHoraFin(horaInicio: string, duracionMinutos: number): string {
-  const [h, m] = horaInicio.split(':').map(Number)
-  const total = (h ?? 0) * 60 + (m ?? 0) + duracionMinutos
-  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
-}
-
-// ── estado en memoria ──────────────────────────────────────────────────────
-
-type CitaRaw = (typeof citasJson)[number]
-let db: CitaRaw[] = citasJson.map((c) => ({ ...c }))
-
-function nextId(): number {
-  return db.length > 0 ? Math.max(...db.map((c) => c.id)) + 1 : 1
-}
-
-// ── API del servicio ───────────────────────────────────────────────────────
+import { api, type SpringPage, type PageParams } from './api'
 
 export const citasService = {
-  async getAll(): Promise<Cita[]> {
-    await new Promise((r) => setTimeout(r, 300))
-    return db.map(resolveCita)
+  getAll(params: PageParams = {}): Promise<SpringPage<Cita>> {
+    return api.getPaged<Cita>('/api/citas', { size: 20, sort: 'fecha', dir: 'desc', ...params })
   },
 
-  async getById(id: number): Promise<Cita | undefined> {
-    await new Promise((r) => setTimeout(r, 150))
-    const raw = db.find((c) => c.id === id)
-    return raw ? resolveCita(raw) : undefined
+  getById(id: number): Promise<Cita> {
+    return api.get<Cita>(`/api/citas/${id}`)
   },
 
-  async getByClienteId(clienteId: number): Promise<Cita[]> {
-    await new Promise((r) => setTimeout(r, 200))
-    return db.filter((c) => c.clienteId === clienteId).map(resolveCita)
+  getByFecha(fecha: string, params: PageParams = {}): Promise<SpringPage<Cita>> {
+    return api.getPaged<Cita>(`/api/citas/fecha?fecha=${fecha}`, params)
   },
 
-  async getAllTiposCita(): Promise<TipoCita[]> {
-    await new Promise((r) => setTimeout(r, 150))
-    return [...tiposCitaJson] as TipoCita[]
+  getByClienteId(clienteId: number, params: PageParams = {}): Promise<SpringPage<Cita>> {
+    return api.getPaged<Cita>(`/api/citas/cliente/${clienteId}`, params)
   },
 
-  async create(data: CitaFormData): Promise<Cita> {
-    await new Promise((r) => setTimeout(r, 500))
-    const tipoCita = tiposCitaJson.find((t) => t.id === data.tipoCitaId)!
-    const raw: CitaRaw = {
-      id: nextId(),
-      fecha: data.fecha,
-      horaInicio: data.horaInicio,
-      horaFin: calcularHoraFin(data.horaInicio, tipoCita.duracionMinutos),
-      estado: 'pendiente',
-      tipoCitaId: data.tipoCitaId,
-      medicoId: data.medicoId,
-      mascotaId: data.mascotaId,
-      clienteId: mascotasJson.find((m) => m.id === data.mascotaId)?.clienteId ?? 0,
-      motivo: data.motivo,
-      observaciones: data.observaciones ?? '',
-      createdAt: new Date().toISOString(),
-    }
-    db.push(raw)
-    return resolveCita(raw)
+  getByMedicoId(medicoId: number, params: PageParams = {}): Promise<SpringPage<Cita>> {
+    return api.getPaged<Cita>(`/api/citas/medico/${medicoId}`, params)
   },
 
-  async update(id: number, data: Partial<CitaFormData>): Promise<Cita> {
-    await new Promise((r) => setTimeout(r, 500))
-    const idx = db.findIndex((c) => c.id === id)
-    if (idx === -1) throw new Error(`Cita ${id} no encontrada`)
-    db[idx] = { ...db[idx]!, ...data }
-    return resolveCita(db[idx]!)
+  getByEstado(estado: EstadoCita, params: PageParams = {}): Promise<SpringPage<Cita>> {
+    return api.getPaged<Cita>(`/api/citas/estado/${estado}`, params)
   },
 
-  async changeStatus(id: number, estado: EstadoCita): Promise<Cita> {
-    await new Promise((r) => setTimeout(r, 200))
-    const raw = db.find((c) => c.id === id)
-    if (!raw) throw new Error(`Cita ${id} no encontrada`)
-    raw.estado = estado
-    return resolveCita(raw)
+  // Catálogo de tipos de cita — lista pequeña, sin paginar
+  getAllTiposCita(): Promise<TipoCita[]> {
+    return api.get<TipoCita[]>('/api/catalogos/tipos-cita')
+  },
+
+  create(data: CitaFormData): Promise<Cita> {
+    return api.post<Cita>('/api/citas', data)
+  },
+
+  update(id: number, data: Partial<CitaFormData>): Promise<Cita> {
+    return api.put<Cita>(`/api/citas/${id}`, data)
+  },
+
+  changeStatus(id: number, estado: EstadoCita): Promise<Cita> {
+    return api.patch<Cita>(`/api/citas/${id}/estado`, { estado })
+  },
+
+  delete(id: number): Promise<void> {
+    return api.delete(`/api/citas/${id}`)
   },
 }
