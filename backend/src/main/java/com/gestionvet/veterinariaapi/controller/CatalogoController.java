@@ -1,5 +1,6 @@
 package com.gestionvet.veterinariaapi.controller;
 
+import com.gestionvet.veterinariaapi.dto.RolDTO;
 import com.gestionvet.veterinariaapi.entity.*;
 import com.gestionvet.veterinariaapi.service.CatalogoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,8 +23,8 @@ public class CatalogoController {
 
     @GetMapping("/roles")
     @Operation(summary = "Listar todos los roles del sistema")
-    public ResponseEntity<List<Rol>> listarRoles() {
-        return ResponseEntity.ok(catalogoService.listarRoles());
+    public ResponseEntity<List<RolDTO>> listarRoles() {
+        return ResponseEntity.ok(catalogoService.listarRolesDTO());
     }
 
     // ── Especies ───────────────────────────────────────────────────────────

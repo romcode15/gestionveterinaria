@@ -44,6 +44,11 @@ public class CitaService {
     }
 
     @Transactional(readOnly = true)
+    public Page<CitaDTO> buscarPorFechaYMedico(LocalDate fecha, Integer medicoId, Pageable pageable) {
+        return citaRepository.findByFechaAndMedicoId(fecha, medicoId, pageable).map(this::toDTO);
+    }
+
+    @Transactional(readOnly = true)
     public Page<CitaDTO> buscarPorCliente(Integer clienteId, Pageable pageable) {
         return citaRepository.findByClienteId(clienteId, pageable).map(this::toDTO);
     }
@@ -249,6 +254,8 @@ public class CitaService {
         dto.setTipoCitaId(c.getTipoCita().getId());
         dto.setTipoCitaNombre(c.getTipoCita().getNombre());
         dto.setTipoCitaDuracionMinutos(c.getTipoCita().getDuracionMinutos());
+        dto.setTipoCitaColor(c.getTipoCita().getColor());
+        dto.setTipoCitaDescripcion(c.getTipoCita().getDescripcion());
         dto.setMedicoId(c.getMedico().getId());
         dto.setMedicoNombre(c.getMedico().getNombre() + " " + c.getMedico().getApellido());
         dto.setMascotaId(c.getMascota().getId());

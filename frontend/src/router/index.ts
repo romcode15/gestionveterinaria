@@ -165,6 +165,30 @@ const router = createRouter({
       meta: { requiresAuth: true, roles: ['admin'] },
     },
 
+    // ── Recepcionistas — solo ADMIN ────────────────────────────────────────
+    {
+      path: '/recepcionistas',
+      name: 'recepcionistas',
+      component: () => import('@/views/recepcionistas/RecepcionistasView.vue'),
+      meta: { requiresAuth: true, roles: ['admin'] },
+    },
+
+    // ── Usuarios — solo ADMIN ──────────────────────────────────────────────
+    {
+      path: '/usuarios',
+      name: 'usuarios',
+      component: () => import('@/views/usuarios/UsuariosView.vue'),
+      meta: { requiresAuth: true, roles: ['admin'] },
+    },
+
+    // ── Perfil (cualquier usuario autenticado) ─────────────────────────────
+    {
+      path: '/perfil',
+      name: 'perfil',
+      component: () => import('@/views/PerfilView.vue'),
+      meta: { requiresAuth: true },
+    },
+
     // ── 404 ────────────────────────────────────────────────────────────────
     {
       path: '/:pathMatch(.*)*',
@@ -175,7 +199,7 @@ const router = createRouter({
 
 // ── Navigation Guard ───────────────────────────────────────────────────────
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach((to, _from) => {
   const authStore = useAuthStore()
 
   // Inicializar sesión desde localStorage si no está cargada
@@ -185,31 +209,31 @@ router.beforeEach((to, _from, next) => {
 
   // Ruta que requiere autenticación
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return next({ name: 'login', query: { redirect: to.fullPath } })
+    return { name: 'login', query: { redirect: to.fullPath } }
   }
 
   // Ruta solo para invitados (login) → redirigir al portal correcto
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    if (authStore.isCliente) return next({ name: 'cliente-dashboard' })
-    if (authStore.isMedico)  return next({ name: 'medico-agenda' })
-    return next({ name: 'dashboard' })
+    if (authStore.isCliente) return { name: 'cliente-dashboard' }
+    if (authStore.isMedico)  return { name: 'medico-agenda' }
+    return { name: 'dashboard' }
   }
 
   // Cliente intentando entrar al dashboard general → su portal
   if (to.name === 'dashboard' && authStore.isAuthenticated && authStore.isCliente) {
-    return next({ name: 'cliente-dashboard' })
+    return { name: 'cliente-dashboard' }
   }
 
   // Médico intentando entrar al dashboard general → su agenda
   if (to.name === 'dashboard' && authStore.isAuthenticated && authStore.isMedico) {
-    return next({ name: 'medico-agenda' })
+    return { name: 'medico-agenda' }
   }
 
   // Rutas excluidas para ciertos roles
   if (to.meta.rolesExcluidos && authStore.isAuthenticated) {
     const excluidos = to.meta.rolesExcluidos as string[]
     if (authStore.roles.some((r) => excluidos.includes(r))) {
-      return next({ name: 'unauthorized' })
+      return { name: 'unauthorized' }
     }
   }
 
@@ -217,15 +241,16 @@ router.beforeEach((to, _from, next) => {
   if (to.meta.roles && authStore.isAuthenticated) {
     const rolesRequeridos = to.meta.roles as string[]
     const tieneRol = authStore.roles.some((r) => rolesRequeridos.includes(r))
-    if (!tieneRol) return next({ name: 'unauthorized' })
+    if (!tieneRol) return { name: 'unauthorized' }
   }
 
   // Verificar permiso específico
   if (to.meta.permiso && !authStore.hasPermiso(to.meta.permiso as string)) {
-    return next({ name: 'unauthorized' })
+    return { name: 'unauthorized' }
   }
 
-  next()
+  // Permitir navegación
+  return true
 })
 
 export default router

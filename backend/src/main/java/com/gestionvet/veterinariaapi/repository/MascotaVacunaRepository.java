@@ -20,6 +20,18 @@ public interface MascotaVacunaRepository extends JpaRepository<MascotaVacuna, In
     // Todas las vacunas de una mascota sin paginar (para exportar)
     List<MascotaVacuna> findByMascotaId(Integer mascotaId);
 
+    // Listado general paginado (para admin/recepcionista)
+    Page<MascotaVacuna> findAll(Pageable pageable);
+
+    // Filtro por estado
+    Page<MascotaVacuna> findByEstado(String estado, Pageable pageable);
+
+    // Filtro por médico (para veterinario logueado)
+    Page<MascotaVacuna> findByMedicoId(Integer medicoId, Pageable pageable);
+
+    // Filtro por médico + estado
+    Page<MascotaVacuna> findByMedicoIdAndEstado(Integer medicoId, String estado, Pageable pageable);
+
     // ── Alertas: vacunas próximas a vencer ────────────────────────────────
     // Busca registros donde la próxima dosis cae entre hoy y hoy+dias
     // y la mascota sigue activa

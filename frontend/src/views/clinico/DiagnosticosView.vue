@@ -20,9 +20,11 @@ import FormActions from '@/components/forms/FormActions.vue'
 
 import { api } from '@/services/api'
 import type { SpringPage } from '@/services/api'
+import { useAuthStore } from '@/stores/auth.store'
 
 const route  = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 
 // ── Tipos locales ──────────────────────────────────────────────────────────
 
@@ -69,6 +71,8 @@ const expandido      = ref<number | null>(null)
 const filtroMascotaId = ref<number | null>(
   route.query.mascotaId ? Number(route.query.mascotaId) : null
 )
+// Filtro por médico (se activa automáticamente cuando el usuario es veterinario)
+const filtroMedicoId = ref<number | null>(null)
 
 // Modal de nuevo diagnóstico
 const showModal      = ref(false)
@@ -98,6 +102,10 @@ const pronosticoOptions = [
 
 // Si viene citaId en la URL, abre el modal automáticamente
 onMounted(async () => {
+  // Si es veterinario y no viene filtro de mascota, carga sus diagnósticos automáticamente
+  if (authStore.isMedico && !filtroMascotaId.value && authStore.medicoId) {
+    filtroMedicoId.value = authStore.medicoId
+  }
   await cargar()
   if (citaIdQuery.value) {
     showModal.value = true
@@ -118,12 +126,16 @@ async function cargar(p = 0) {
   loading.value = true
   error.value   = null
   try {
-    const endpoint = filtroMascotaId.value
-      ? `/api/diagnosticos/mascota/${filtroMascotaId.value}`
-      : '/api/diagnosticos'
+    let endpoint: string
 
-    // Si no hay filtro, mostramos estado vacío sin llamar a la API
-    if (!filtroMascotaId.value) {
+    if (filtroMascotaId.value) {
+      // Historial de una mascota concreta
+      endpoint = `/api/diagnosticos/mascota/${filtroMascotaId.value}`
+    } else if (filtroMedicoId.value) {
+      // Diagnósticos del veterinario logueado
+      endpoint = `/api/diagnosticos/medico/${filtroMedicoId.value}`
+    } else {
+      // Sin filtro — estado vacío (solo admin debería llegar aquí con filtro vacío)
       diagnosticos.value  = []
       totalElements.value = 0
       totalPages.value    = 0
@@ -220,13 +232,15 @@ function formatFecha(f: string) {
 
 function limpiarFiltro() {
   filtroMascotaId.value = null
-  diagnosticos.value = []
-  totalElements.value = 0
-  totalPages.value = 0
-  // Limpiar query param
-  if (route.query.mascotaId) {
-    router.replace({ query: {} })
+  // Si es veterinario, vuelve a mostrar sus diagnósticos; si no, vacío
+  if (!authStore.isMedico) {
+    diagnosticos.value = []
+    totalElements.value = 0
+    totalPages.value = 0
+  } else {
+    cargar()
   }
+  if (route.query.mascotaId) router.replace({ query: {} })
 }
 </script>
 
@@ -272,9 +286,9 @@ function limpiarFiltro() {
         </template>
       </SearchToolbar>
 
-      <!-- Estado vacío sin filtro -->
+      <!-- Estado vacío sin filtro (solo admin/recepcionista sin mascota seleccionada) -->
       <EmptyState
-        v-if="!filtroMascotaId && !loading"
+        v-if="!filtroMascotaId && !filtroMedicoId && !loading"
         icon="📋"
         title="Accede desde el historial de una mascota"
         message="O registra un nuevo diagnóstico indicando el ID de la cita completada"

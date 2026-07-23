@@ -15,6 +15,7 @@ import java.util.List;
 public interface CitaRepository extends JpaRepository<Cita, Integer> {
 
     Page<Cita> findByFecha(LocalDate fecha, Pageable pageable);
+    Page<Cita> findByFechaAndMedicoId(LocalDate fecha, Integer medicoId, Pageable pageable);
     Page<Cita> findByClienteId(Integer clienteId, Pageable pageable);
     Page<Cita> findByMedicoId(Integer medicoId, Pageable pageable);
     Page<Cita> findByEstado(String estado, Pageable pageable);

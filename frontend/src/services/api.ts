@@ -29,6 +29,8 @@ export interface PageParams {
   size?: number
   sort?: string
   dir?: 'asc' | 'desc'
+  // Parámetros extra de filtro (ej: fecha, estado, medicoId…)
+  [key: string]: string | number | boolean | undefined
 }
 
 // ── Error tipado de la API ────────────────────────────────────────────────
@@ -112,14 +114,17 @@ export const api = {
 
   /**
    * GET paginado — devuelve SpringPage<T>
-   * Ejemplo: api.getPaged('/api/clientes', { page: 0, size: 20, sort: 'apellido', dir: 'asc' })
+   * Acepta page/size/sort/dir y cualquier parámetro extra de filtro (fecha, estado, etc.)
+   * Ejemplo: api.getPaged('/api/citas/fecha', { fecha: '2026-07-23', page: 0, size: 20 })
    */
   getPaged<T>(path: string, params: PageParams = {}): Promise<SpringPage<T>> {
+    const { page, size, sort, dir, ...extras } = params
     const query = buildQuery({
-      page: params.page ?? 0,
-      size: params.size ?? 20,
-      sort: params.sort,
-      dir:  params.dir,
+      page: page ?? 0,
+      size: size ?? 20,
+      sort,
+      dir,
+      ...extras,
     })
     return request<SpringPage<T>>(`${path}${query}`, { method: 'GET' })
   },

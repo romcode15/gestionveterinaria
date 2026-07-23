@@ -30,7 +30,8 @@ public class UsuarioDTO {
     private LocalDateTime ultimoAcceso;
     private LocalDateTime createdAt;
     private Integer clienteId;
-    private Integer medicoId;   // vinculación con tabla medicos (rol VETERINARIO)
+    private Integer medicoId;
+    private Integer recepcionistaId;
 
     @NotEmpty(message = "Debe asignar al menos un rol")
     private Set<Integer> rolesIds;
@@ -75,6 +76,9 @@ public class UsuarioDTO {
 
     public Integer getMedicoId() { return medicoId; }
     public void setMedicoId(Integer medicoId) { this.medicoId = medicoId; }
+
+    public Integer getRecepcionistaId() { return recepcionistaId; }
+    public void setRecepcionistaId(Integer recepcionistaId) { this.recepcionistaId = recepcionistaId; }
 
     public Set<Integer> getRolesIds() { return rolesIds; }
     public void setRolesIds(Set<Integer> rolesIds) { this.rolesIds = rolesIds; }

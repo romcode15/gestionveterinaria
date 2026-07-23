@@ -9,40 +9,51 @@ import AppPagination from '@/components/ui/AppPagination.vue'
 import AppTable from '@/components/ui/AppTable.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppButton from '@/components/ui/AppButton.vue'
-
 import PageHeader from '@/components/common/PageHeader.vue'
 import SearchToolbar from '@/components/common/SearchToolbar.vue'
-
 import ClienteForm from '@/components/clientes/ClienteForm.vue'
 import { useClientesStore } from '@/stores/clientes.store'
+import { useAuthStore } from '@/stores/auth.store'
 import type { Cliente, ClienteFormData } from '@/types'
 
-// Definición de columnas para AppTable
 const columns = [
-  { key: 'cliente', label: 'Cliente' },
+  { key: 'cliente',   label: 'Cliente' },
   { key: 'documento', label: 'Documento' },
-  { key: 'contacto', label: 'Contacto' },
-  { key: 'mascotas', label: 'Mascotas', align: 'center' },
-  { key: 'estado', label: 'Estado', align: 'center' },
+  { key: 'contacto',  label: 'Contacto' },
+  { key: 'mascotas',  label: 'Mascotas', align: 'center' },
+  { key: 'estado',    label: 'Estado',   align: 'center' },
 ] as const
 
 const clientesStore = useClientesStore()
+const authStore     = useAuthStore()
 
-onMounted(() => clientesStore.cargar({ page: 0 }))
-
-// Recargar al cambiar filtros — vuelve siempre a página 0
-watch([() => clientesStore.searchQuery, () => clientesStore.filtroEstado], () => {
+onMounted(() => {
+  // Si es veterinario, limitar a sus propios clientes
+  clientesStore.medicoId = authStore.isMedico ? (authStore.medicoId ?? null) : null
   clientesStore.cargar({ page: 0 })
 })
 
-const showModal = ref(false)
+// Debounce de 400ms para no disparar una petición por cada tecla
+let searchTimer: ReturnType<typeof setTimeout>
+watch(() => clientesStore.searchQuery, (val) => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    clientesStore.cargar({ page: 0 })
+  }, 400)
+}, { flush: 'post' })
+
+watch(() => clientesStore.filtroEstado, () => {
+  clientesStore.cargar({ page: 0 })
+})
+
+const showModal   = ref(false)
 const clienteEditando = ref<Cliente | null>(null)
-const successMessage = ref('')
-const loading = ref(false)
+const successMessage  = ref('')
+const loading     = ref(false)
 
 const estadoOptions = [
-  { value: 'todos', label: 'Todos los estados' },
-  { value: 'activo', label: 'Activos' },
+  { value: 'todos',    label: 'Todos los estados' },
+  { value: 'activo',   label: 'Activos' },
   { value: 'inactivo', label: 'Inactivos' },
 ]
 
@@ -56,6 +67,11 @@ function abrirEditar(cliente: Cliente) {
   showModal.value = true
 }
 
+function cerrarModal() {
+  showModal.value = false
+  setTimeout(() => { clienteEditando.value = null }, 300)
+}
+
 async function handleSubmit(data: ClienteFormData) {
   loading.value = true
   try {
@@ -64,10 +80,10 @@ async function handleSubmit(data: ClienteFormData) {
       successMessage.value = 'Cliente actualizado correctamente'
     } else {
       await clientesStore.crear(data)
-      successMessage.value = 'Cliente registrado correctamente'
+      successMessage.value = 'Cliente registrado. Usuario y contraseña inicial = número de documento'
     }
-    showModal.value = false
-    setTimeout(() => (successMessage.value = ''), 3000)
+    cerrarModal()
+    setTimeout(() => (successMessage.value = ''), 5000)
   } finally {
     loading.value = false
   }
@@ -98,16 +114,16 @@ async function handleToggleEstado(cliente: Cliente) {
         </AppAlert>
       </Transition>
 
-      <!-- Toolbar con SearchToolbar -->
       <SearchToolbar
         v-model:search="clientesStore.searchQuery"
         search-placeholder="Buscar por nombre, documento, email..."
-        :show-new-button="true"
+        :show-new-button="!authStore.isMedico"
         new-button-label="Nuevo cliente"
         @new="abrirCrear"
       >
         <template #filters>
           <AppSelect
+            v-if="!authStore.isMedico"
             v-model="clientesStore.filtroEstado"
             :options="estadoOptions"
             class="w-full sm:w-48"
@@ -115,7 +131,6 @@ async function handleToggleEstado(cliente: Cliente) {
         </template>
       </SearchToolbar>
 
-      <!-- Tabla con AppTable -->
       <AppCard padding="none">
         <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--border-color)">
           <h2 class="font-semibold" style="color: var(--text-primary)">
@@ -123,14 +138,14 @@ async function handleToggleEstado(cliente: Cliente) {
           </h2>
         </div>
 
+        <!-- Sin @row-click — solo se abre el modal desde el botón Editar -->
         <AppTable
           :columns="columns"
           :rows="clientesStore.clientes"
           :loading="clientesStore.loading"
           empty-message="No se encontraron clientes"
-          @row-click="abrirEditar"
         >
-          <!-- Columna Cliente (avatar + nombre + ciudad) -->
+          <!-- Columna Cliente -->
           <template #cell-cliente="{ row }">
             <div class="flex items-center gap-3">
               <div class="w-9 h-9 rounded-full vg-client-avatar flex items-center justify-center font-semibold text-sm shrink-0">
@@ -155,30 +170,25 @@ async function handleToggleEstado(cliente: Cliente) {
             <p class="text-xs" style="color: var(--text-muted)">{{ row.telefono }}</p>
           </template>
 
-          <!-- Columna Mascotas (badge) -->
+          <!-- Columna Mascotas -->
           <template #cell-mascotas="{ row }">
-            <AppBadge :variant="row.numeroMascotas > 0 ? 'primary' : 'neutral'">
-              {{ row.numeroMascotas }}
+            <AppBadge :variant="(row.numeroMascotas ?? 0) > 0 ? 'primary' : 'neutral'">
+              {{ row.numeroMascotas ?? 0 }}
             </AppBadge>
           </template>
 
-          <!-- Columna Estado (badge con dot) -->
+          <!-- Columna Estado -->
           <template #cell-estado="{ row }">
             <AppBadge :variant="row.estado === 'activo' ? 'success' : 'neutral'" dot>
               {{ row.estado === 'activo' ? 'Activo' : 'Inactivo' }}
             </AppBadge>
           </template>
 
-          <!-- Acciones -->
+          <!-- Acciones: solo admin/recepcionista pueden editar -->
           <template #actions="{ row }">
-            <div class="flex items-center justify-end gap-1">
-              <AppButton
-                variant="ghost"
-                size="sm"
-                title="Editar"
-                aria-label="Editar cliente"
-                @click.stop="abrirEditar(row)"
-              >
+            <div v-if="!authStore.isMedico" class="flex items-center justify-end gap-1">
+              <AppButton variant="ghost" size="sm" title="Editar" aria-label="Editar cliente"
+                @click.stop="abrirEditar(row)">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -188,7 +198,6 @@ async function handleToggleEstado(cliente: Cliente) {
                 :variant="row.estado === 'activo' ? 'danger' : 'ghost'"
                 size="sm"
                 :title="row.estado === 'activo' ? 'Inactivar' : 'Activar'"
-                :aria-label="row.estado === 'activo' ? 'Inactivar cliente' : 'Activar cliente'"
                 @click.stop="handleToggleEstado(row)"
               >
                 <svg v-if="row.estado === 'activo'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,7 +213,6 @@ async function handleToggleEstado(cliente: Cliente) {
           </template>
         </AppTable>
 
-        <!-- Paginación -->
         <div class="px-4 border-t" style="border-color: var(--border-color)">
           <AppPagination
             :page="clientesStore.page"
@@ -222,12 +230,14 @@ async function handleToggleEstado(cliente: Cliente) {
       v-model="showModal"
       :title="clienteEditando ? 'Editar cliente' : 'Nuevo cliente'"
       size="lg"
+      @close="cerrarModal"
     >
       <ClienteForm
+        :key="clienteEditando?.id ?? 'nuevo'"
         :cliente="clienteEditando"
         :loading="loading"
         @submit="handleSubmit"
-        @cancel="showModal = false"
+        @cancel="cerrarModal"
       />
     </AppModal>
   </DashboardLayout>

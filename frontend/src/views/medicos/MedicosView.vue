@@ -10,8 +10,8 @@ import AppPagination from '@/components/ui/AppPagination.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import SearchToolbar from '@/components/common/SearchToolbar.vue'
 import EntitySummary from '@/components/common/EntitySummary.vue'
-import EntityCard from '@/components/common/EntityCard.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import AppBadge from '@/components/ui/AppBadge.vue'
 
 import MedicoForm from '@/components/medicos/MedicoForm.vue'
 import { useMedicosStore } from '@/stores/medicos.store'
@@ -69,6 +69,12 @@ function abrirEditar(medico: Medico) {
   showModal.value = true
 }
 
+function cerrarModal() {
+  showModal.value = false
+  // Limpiar después de que cierre la animación
+  setTimeout(() => { medicoEditando.value = null }, 300)
+}
+
 async function handleSubmit(data: MedicoFormData) {
   loading.value = true
   try {
@@ -79,7 +85,7 @@ async function handleSubmit(data: MedicoFormData) {
       await medicosStore.crear(data)
       successMessage.value = 'Médico registrado correctamente'
     }
-    showModal.value = false
+    cerrarModal()
     setTimeout(() => (successMessage.value = ''), 3000)
   } finally {
     loading.value = false
@@ -127,18 +133,13 @@ async function handleSubmit(data: MedicoFormData) {
 
         <div class="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           <template v-if="medicosStore.medicos.length > 0">
-            <EntityCard
+            <div
               v-for="medico in medicosStore.medicos"
               :key="medico.id"
-              :title="`${medico.nombre} ${medico.apellido}`"
-              :subtitle="`Lic. ${medico.numeroLicencia}`"
-              :status="{
-                label: medico.disponible ? 'Disponible' : 'No disponible',
-                variant: medico.disponible ? 'success' : 'neutral',
-                dot: true,
-              }"
+              class="vg-card rounded-2xl p-4 sm:p-5 hover:shadow-md transition-shadow"
             >
-              <template #avatar>
+              <div class="flex items-start gap-3 sm:gap-4">
+                <!-- Avatar -->
                 <div
                   class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-base sm:text-lg font-bold shrink-0"
                   :style="{
@@ -148,44 +149,84 @@ async function handleSubmit(data: MedicoFormData) {
                 >
                   {{ getInitials(medico) }}
                 </div>
-              </template>
 
-              <template #details>
-                <div class="flex flex-wrap gap-1.5 mt-2">
-                  <span
-                    v-for="esp in medico.especialidades"
-                    :key="esp.id"
-                    class="px-2 py-0.5 text-xs rounded-full font-medium vg-esp-tag"
-                    style="background-color: rgba(16,185,129,0.12); color: #059669;"
-                  >
-                    {{ esp.nombre }}
-                  </span>
-                </div>
-                <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 mt-3 text-xs" style="color: var(--text-muted)">
-                  <span class="flex items-center gap-1 min-w-0">
-                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <span class="truncate">{{ medico.email }}</span>
-                  </span>
-                  <span class="flex items-center gap-1 shrink-0">
-                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                    {{ medico.telefono }}
-                  </span>
-                </div>
-              </template>
+                <div class="flex-1 min-w-0">
+                  <!-- Cabecera -->
+                  <div class="flex flex-wrap items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <h3 class="font-semibold truncate" style="color: var(--text-primary)">
+                        {{ medico.nombre }} {{ medico.apellido }}
+                      </h3>
+                      <p class="text-xs mt-0.5 truncate" style="color: var(--text-muted)">
+                        Lic. {{ medico.numeroLicencia }}
+                      </p>
+                    </div>
+                    <AppBadge
+                      :variant="medico.disponible ? 'success' : 'neutral'"
+                      dot
+                      class="shrink-0"
+                    >
+                      {{ medico.disponible ? 'Disponible' : 'No disponible' }}
+                    </AppBadge>
+                  </div>
 
-              <template #actions>
-                <div class="flex-1"></div>
-                <AppButton variant="ghost" size="sm" title="Editar médico" @click="abrirEditar(medico)">
-                  ✏️
-                </AppButton>
-              </template>
-            </EntityCard>
+                  <!-- Especialidades -->
+                  <div class="flex flex-wrap gap-1.5 mt-2">
+                    <span
+                      v-for="esp in medico.especialidades"
+                      :key="esp.id"
+                      class="px-2 py-0.5 text-xs rounded-full font-medium"
+                      style="background-color: rgba(16,185,129,0.12); color: #059669;"
+                    >
+                      {{ esp.nombre }}
+                    </span>
+                  </div>
+
+                  <!-- Contacto -->
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 mt-3 text-xs" style="color: var(--text-muted)">
+                    <span class="flex items-center gap-1 min-w-0">
+                      <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <span class="truncate">{{ medico.email }}</span>
+                    </span>
+                    <span class="flex items-center gap-1 shrink-0">
+                      <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                      {{ medico.telefono }}
+                    </span>
+                  </div>
+
+                  <!-- Username si existe -->
+                  <div v-if="medico.username" class="mt-2">
+                    <span class="text-xs font-mono px-2 py-0.5 rounded"
+                      style="background: var(--bg-hover); color: var(--text-secondary)">
+                      👤 {{ medico.username }}
+                    </span>
+                  </div>
+
+                  <!-- Footer con botón editar -->
+                  <div class="mt-3 pt-3 flex items-center justify-end"
+                    style="border-top: 1px solid var(--border-default)">
+                    <AppButton
+                      variant="ghost"
+                      size="sm"
+                      title="Editar médico"
+                      @click="abrirEditar(medico)"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Editar
+                    </AppButton>
+                  </div>
+                </div>
+              </div>
+            </div>
           </template>
 
           <EmptyState
@@ -215,13 +256,15 @@ async function handleSubmit(data: MedicoFormData) {
       v-model="showModal"
       :title="medicoEditando ? 'Editar médico' : 'Nuevo médico'"
       size="lg"
+      @close="cerrarModal"
     >
       <MedicoForm
+        :key="medicoEditando?.id ?? 'nuevo'"
         :medico="medicoEditando"
         :especialidades="medicosStore.especialidades"
         :loading="loading"
         @submit="handleSubmit"
-        @cancel="showModal = false"
+        @cancel="cerrarModal"
       />
     </AppModal>
   </DashboardLayout>

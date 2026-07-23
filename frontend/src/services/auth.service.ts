@@ -1,49 +1,58 @@
-import type { Usuario } from '@/types'
+import type { Usuario, RoleName } from '@/types'
 import { api } from './api'
 
 const TOKEN_KEY = 'vet_token'
 const USER_KEY  = 'vet_user'
 
+// ── Nueva interfaz que coincide con la respuesta del backend (con permisos) ──
 interface LoginResponse {
   token: string
   tipo: string
-  usuario: {
+  id: number
+  username: string
+  email: string
+  nombre: string
+  apellido: string
+  clienteId: number | null
+  medicoId: number | null
+  recepcionistaId: number | null
+  roles: Array<{
     id: number
-    username: string
-    email: string
     nombre: string
-    apellido: string
-    activo: boolean
-    clienteId: number | null
-    medicoId: number | null
-    roles: Array<{
+    descripcion: string
+    permisos: Array<{
       id: number
       nombre: string
       descripcion: string
-      permisos: Array<{ id: number; nombre: string; descripcion: string; modulo: string }>
+      modulo: string
     }>
-  }
+  }>
 }
 
 export const authService = {
   async login(credentials: { username: string; password: string }): Promise<{ token: string; usuario: Usuario }> {
     const res = await api.postPublic<LoginResponse>('/api/auth/login', credentials)
 
+    // Mapeo correcto: roles vienen con permisos desde el backend
     const usuario: Usuario = {
-      id:           res.usuario.id,
-      username:     res.usuario.username,
-      email:        res.usuario.email,
-      nombre:       res.usuario.nombre,
-      apellido:     res.usuario.apellido,
-      activo:       res.usuario.activo,
-      clienteId:    res.usuario.clienteId,
-      medicoId:     res.usuario.medicoId,
-      ultimoAcceso: new Date().toISOString(),
-      roles: res.usuario.roles.map((r) => ({
-        id:          r.id,
-        nombre:      r.nombre as Usuario['roles'][number]['nombre'],
-        descripcion: r.descripcion,
-        permisos:    r.permisos,
+      id: res.id,
+      username: res.username,
+      email: res.email,
+      nombre: res.nombre,
+      apellido: res.apellido,
+      activo: true,
+      clienteId: res.clienteId ?? null,
+      medicoId:  res.medicoId  ?? null,
+      roles: res.roles.map((rol) => ({
+        id: rol.id,
+        nombre: rol.nombre as RoleName,
+        descripcion: rol.descripcion,
+        permisos: rol.permisos.map((p) => ({
+          id: p.id,
+          nombre: p.nombre,
+          descripcion: p.descripcion,
+          modulo: p.modulo,
+        })),
       })),
     }
 
@@ -72,9 +81,12 @@ export const authService = {
     }
   },
 
-  // El token JWT es válido si existe y no está vacío.
-  // La expiración real la controla el backend (86400000ms = 24h).
   isTokenValid(token: string): boolean {
     return token.length > 0
+  },
+
+  async cambiarPassword(passwordActual: string, passwordNueva: string): Promise<void> {
+    const { api } = await import('./api')
+    return api.patch<void>('/api/auth/cambiar-password', { passwordActual, passwordNueva })
   },
 }

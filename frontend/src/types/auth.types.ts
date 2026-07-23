@@ -40,3 +40,13 @@ export interface AuthState {
   loading: boolean
   error: string | null
 }
+
+export interface UsuarioFormData {
+  username: string
+  password?: string
+  email: string
+  nombre: string
+  apellido: string
+  activo?: boolean
+  rolesIds: number[]
+}

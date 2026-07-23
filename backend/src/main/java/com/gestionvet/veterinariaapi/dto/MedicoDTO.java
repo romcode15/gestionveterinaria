@@ -40,6 +40,10 @@ public class MedicoDTO {
     // Para la respuesta: nombres de especialidades
     private Set<String> especialidadesNombres;
 
+    // Datos del usuario vinculado (solo lectura)
+    private Integer usuarioId;
+    private String  username;
+
     // ── Constructores ──────────────────────────────────────────────────────
 
     public MedicoDTO() {}
@@ -84,4 +88,10 @@ public class MedicoDTO {
 
     public Set<String> getEspecialidadesNombres() { return especialidadesNombres; }
     public void setEspecialidadesNombres(Set<String> especialidadesNombres) { this.especialidadesNombres = especialidadesNombres; }
+
+    public Integer getUsuarioId() { return usuarioId; }
+    public void setUsuarioId(Integer usuarioId) { this.usuarioId = usuarioId; }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 }

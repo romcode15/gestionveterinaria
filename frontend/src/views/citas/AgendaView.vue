@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import AppAlert from '@/components/ui/AppAlert.vue'
@@ -18,8 +18,18 @@ const citasStore = useCitasStore()
 const mascotasStore = useMascotasStore()
 
 onMounted(async () => {
-  await Promise.all([citasStore.cargar(), mascotasStore.cargar()])
+  await Promise.all([
+    citasStore.cargarPorFecha(citasStore.fechaSeleccionada),
+    citasStore.cargarCatalogos(),
+    mascotasStore.cargar(),
+  ])
 })
+
+// Recargar citas del backend cuando el usuario navega a otro día
+watch(
+  () => citasStore.fechaSeleccionada,
+  (fecha) => citasStore.cargarPorFecha(fecha),
+)
 
 const showModal = ref(false)
 const citaEditando = ref<Cita | null>(null)

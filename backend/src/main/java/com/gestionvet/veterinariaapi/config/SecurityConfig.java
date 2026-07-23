@@ -34,7 +34,7 @@ public class SecurityConfig {
     // ── Rutas públicas (sin token) ─────────────────────────────────────────
 
     private static final String[] PUBLIC_URLS = {
-        "/api/auth/**",          // login
+        "/api/auth/login",       // solo el login es público
         "/swagger-ui.html",
         "/swagger-ui/**",
         "/api-docs/**",
@@ -131,6 +131,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/api/vacunas/**").hasRole("ADMIN")
 
                 .requestMatchers(HttpMethod.GET,    "/api/mascota-vacunas/**").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
+                .requestMatchers(HttpMethod.GET,    "/api/mascota-vacunas").hasAnyRole("ADMIN", "VETERINARIO", "RECEPCIONISTA")
                 .requestMatchers(HttpMethod.POST,   "/api/mascota-vacunas").hasAnyRole("ADMIN", "VETERINARIO")
                 .requestMatchers(HttpMethod.PUT,    "/api/mascota-vacunas/**").hasAnyRole("ADMIN", "VETERINARIO")
 
@@ -139,6 +140,12 @@ public class SecurityConfig {
 
                 // ── Usuarios (solo ADMIN) ──────────────────────────────────
                 .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
+
+                // ── Recepcionistas (solo ADMIN) ────────────────────────────
+                .requestMatchers("/api/recepcionistas/**").hasRole("ADMIN")
+
+                // ── Cambio de contraseña (cualquier usuario autenticado) ───
+                .requestMatchers(HttpMethod.PATCH, "/api/auth/cambiar-password").authenticated()
 
                 // ── Cualquier otra ruta requiere autenticación ─────────────
                 .anyRequest().authenticated()

@@ -3,7 +3,7 @@ import { api, type SpringPage, type PageParams } from './api'
 
 export const medicosService = {
   getAll(params: PageParams = {}): Promise<SpringPage<Medico>> {
-    return api.getPaged<Medico>('/api/medicos', { size: 20, sort: 'apellido', dir: 'asc', ...params })
+    return api.getPaged<Medico>('/api/medicos', { size: 10, sort: 'apellido', dir: 'asc', ...params })
   },
 
   getById(id: number): Promise<Medico> {

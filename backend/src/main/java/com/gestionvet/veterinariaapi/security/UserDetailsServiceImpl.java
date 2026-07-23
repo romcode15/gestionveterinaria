@@ -31,14 +31,16 @@ public class UserDetailsServiceImpl implements UserDetailsService {
      */
     @Override
     @Transactional(readOnly = true)
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
 
-        Usuario usuario = usuarioRepository.findByUsername(username)
+        // Intentar por username primero, luego por email
+        Usuario usuario = usuarioRepository.findByUsername(usernameOrEmail)
+                .or(() -> usuarioRepository.findByEmail(usernameOrEmail))
                 .orElseThrow(() -> new UsernameNotFoundException(
-                        "Usuario no encontrado: " + username));
+                        "Usuario no encontrado: " + usernameOrEmail));
 
         if (!usuario.getActivo()) {
-            throw new UsernameNotFoundException("Usuario inactivo: " + username);
+            throw new UsernameNotFoundException("Usuario inactivo: " + usernameOrEmail);
         }
 
         List<GrantedAuthority> authorities = new ArrayList<>();

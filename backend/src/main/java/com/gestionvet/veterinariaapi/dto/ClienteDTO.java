@@ -38,6 +38,13 @@ public class ClienteDTO {
     private String observaciones;
     private LocalDateTime createdAt;
 
+    // Datos del usuario vinculado (solo lectura)
+    private Integer usuarioId;
+    private String  username;
+
+    // Calculado en tiempo real desde la tabla mascotas
+    private int numeroMascotas;
+
     // ── Constructores ──────────────────────────────────────────────────────
 
     public ClienteDTO() {}
@@ -82,4 +89,13 @@ public class ClienteDTO {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public Integer getUsuarioId() { return usuarioId; }
+    public void setUsuarioId(Integer usuarioId) { this.usuarioId = usuarioId; }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+
+    public int getNumeroMascotas() { return numeroMascotas; }
+    public void setNumeroMascotas(int numeroMascotas) { this.numeroMascotas = numeroMascotas; }
 }

@@ -17,6 +17,9 @@ interface NavItem {
   icon: string
   to: string
   permiso?: string
+  rol?: string          // requiere exactamente este rol
+  roles?: string[]      // requiere uno de estos roles
+  rolExcluido?: string  // oculto si el usuario tiene este rol
   badge?: number
 }
 
@@ -27,17 +30,20 @@ const navItemsStaff: NavItem[] = [
     icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
     to: '/dashboard',
   },
+  // ── Solo ADMIN y RECEPCIONISTA ─────────────────────────────────────────
   {
     label: 'Clientes',
     icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
     to: '/clientes',
     permiso: 'clientes.ver',
   },
+  // ── Solo ADMIN ─────────────────────────────────────────────────────────
   {
     label: 'Médicos',
     icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
     to: '/medicos',
     permiso: 'medicos.ver',
+    rol: 'admin',
   },
   {
     label: 'Mascotas',
@@ -56,6 +62,52 @@ const navItemsStaff: NavItem[] = [
     icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
     to: '/agenda',
     permiso: 'citas.ver',
+    rolExcluido: 'veterinario',   // el veterinario usa su propia agenda en /mi-agenda
+  },
+  // ── Portal Médico — solo VETERINARIO ───────────────────────────────────
+  {
+    label: 'Mi Agenda',
+    icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
+    to: '/mi-agenda',
+    rol: 'veterinario',
+  },
+  {
+    label: 'Diagnósticos',
+    icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+    to: '/diagnosticos',
+    roles: ['admin', 'veterinario', 'recepcionista'],
+  },
+  {
+    label: 'Vacunación',
+    icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
+    to: '/vacunacion',
+    roles: ['admin', 'veterinario', 'recepcionista'],
+  },
+  // Inventario oculto temporalmente
+  // {
+  //   label: 'Inventario',
+  //   icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4',
+  //   to: '/inventario',
+  //   roles: ['admin', 'veterinario', 'recepcionista'],
+  // },
+  // ── Solo ADMIN ─────────────────────────────────────────────────────────
+  {
+    label: 'Recepcionistas',
+    icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
+    to: '/recepcionistas',
+    rol: 'admin',
+  },
+  {
+    label: 'Usuarios',
+    icon: 'M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+    to: '/usuarios',
+    rol: 'admin',
+  },
+  {
+    label: 'Auditoría',
+    icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
+    to: '/auditoria',
+    rol: 'admin',
   },
 ]
 
@@ -65,19 +117,29 @@ const navItemsCliente: NavItem[] = [
     label: 'Mi portal',
     icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
     to: '/mi-portal',
-    permiso: 'cliente.mis-mascotas',
+    permiso: 'cliente.mis_mascotas',
   },
   {
     label: 'Mis citas',
     icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
     to: '/mis-citas',
-    permiso: 'cliente.mis-citas',
+    permiso: 'cliente.mis_citas',
   },
 ]
 
 const visibleNavItems = computed(() => {
   const items = authStore.isCliente ? navItemsCliente : navItemsStaff
-  return items.filter((item) => !item.permiso || authStore.hasPermiso(item.permiso))
+  return items.filter((item) => {
+    // Ocultar si el usuario tiene el rol excluido
+    if (item.rolExcluido && authStore.hasRole(item.rolExcluido as import('@/types').RoleName)) return false
+    // Requiere un rol exacto
+    if (item.rol && !authStore.hasRole(item.rol as import('@/types').RoleName)) return false
+    // Requiere uno de varios roles
+    if (item.roles && !item.roles.some((r) => authStore.hasRole(r as import('@/types').RoleName))) return false
+    // Requiere un permiso específico
+    if (item.permiso && !authStore.hasPermiso(item.permiso)) return false
+    return true
+  })
 })
 
 function isActive(to: string): boolean {
@@ -224,18 +286,32 @@ const rolLabel = computed(() => {
             </div>
           </Transition>
           <Transition name="fade">
-            <button
-              v-if="sidebarOpen"
-              @click="handleLogout"
-              class="p-1.5 rounded-lg vg-sidebar-text hover:text-white vg-sidebar-item-hover transition-colors"
-              title="Cerrar sesión"
-              aria-label="Cerrar sesión"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
+            <div v-if="sidebarOpen" class="flex items-center gap-1">
+              <!-- Perfil -->
+              <button
+                @click="router.push('/perfil')"
+                class="p-1.5 rounded-lg vg-sidebar-text hover:text-white vg-sidebar-item-hover transition-colors"
+                title="Mi perfil"
+                aria-label="Mi perfil"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+              <!-- Cerrar sesión -->
+              <button
+                @click="handleLogout"
+                class="p-1.5 rounded-lg vg-sidebar-text hover:text-white vg-sidebar-item-hover transition-colors"
+                title="Cerrar sesión"
+                aria-label="Cerrar sesión"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </div>
           </Transition>
         </div>
       </div>

@@ -14,7 +14,7 @@ export const useMedicosStore = defineStore('medicos', () => {
 
   // Paginación
   const page              = ref(0)
-  const pageSize          = ref(20)
+  const pageSize          = ref(10)
   const totalElements     = ref(0)
   const totalPages        = ref(0)
 

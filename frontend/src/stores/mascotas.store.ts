@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import type { Mascota, MascotaFormData, Especie, Raza } from '@/types'
 import type { PageParams } from '@/services/api'
 import { mascotasService } from '@/services/mascotas.service'
+import { api } from '@/services/api'
 
 export const useMascotasStore = defineStore('mascotas', () => {
   // ── Estado ─────────────────────────────────────────────────────────────
@@ -15,13 +16,16 @@ export const useMascotasStore = defineStore('mascotas', () => {
 
   // Paginación
   const page          = ref(0)
-  const pageSize      = ref(20)
+  const pageSize      = ref(10)
   const totalElements = ref(0)
   const totalPages    = ref(0)
 
   // Filtros
   const searchQuery      = ref('')
   const filtroEspecieId  = ref<number | null>(null)
+
+  // Si está activo, el store usa el portal médico en lugar del endpoint general
+  const medicoId         = ref<number | null>(null)
 
   // ── Computed ────────────────────────────────────────────────────────────
 
@@ -57,9 +61,21 @@ export const useMascotasStore = defineStore('mascotas', () => {
         dir:  params.dir  ?? 'asc',
       }
 
-      const res = searchQuery.value.trim()
-        ? await mascotasService.buscar(searchQuery.value.trim(), p)
-        : await mascotasService.getAll(p)
+      let res
+      if (medicoId.value) {
+        // Veterinario: solo sus mascotas via portal médico
+        const portalParams: PageParams = { ...p }
+        if (searchQuery.value.trim()) portalParams.busqueda = searchQuery.value.trim()
+        try {
+          res = await api.getPaged<Mascota>('/api/portal/medico/mascotas', portalParams)
+        } catch {
+          mascotas.value = []; totalElements.value = 0; totalPages.value = 0; loading.value = false; return
+        }
+      } else {
+        res = searchQuery.value.trim()
+          ? await mascotasService.buscar(searchQuery.value.trim(), p)
+          : await mascotasService.getAll(p)
+      }
 
       mascotas.value      = res.content
       page.value          = res.number
@@ -104,6 +120,11 @@ export const useMascotasStore = defineStore('mascotas', () => {
 
   function getById(id: number): Mascota | undefined {
     return mascotas.value.find((m) => m.id === id)
+  }
+
+  // Filtrar mascotas en memoria por clienteId (para portal cliente)
+  function mascotasPorCliente(clienteId: number): Mascota[] {
+    return mascotas.value.filter((m) => m.clienteId === clienteId)
   }
 
   async function crear(data: MascotaFormData): Promise<Mascota> {
@@ -155,6 +176,7 @@ export const useMascotasStore = defineStore('mascotas', () => {
     totalPages,
     searchQuery,
     filtroEspecieId,
+    medicoId,
     especies,
     razas,
     razasPorEspecie,
@@ -167,6 +189,7 @@ export const useMascotasStore = defineStore('mascotas', () => {
     siguientePagina,
     paginaAnterior,
     getById,
+    mascotasPorCliente,
     crear,
     actualizar,
     eliminar,

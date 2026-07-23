@@ -20,9 +20,31 @@ public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
     Page<Cliente> findByEstado(String estado, Pageable pageable);
 
     // Incrementar o decrementar numero_mascotas directamente en BD
-    // nativeQuery=true usa SQL puro en vez de JPQL — no depende del mapeo de la entidad
     @Modifying
     @Query(value = "UPDATE clientes SET numero_mascotas = numero_mascotas + :delta WHERE id = :id",
            nativeQuery = true)
     void actualizarNumeroMascotas(@Param("id") Integer id, @Param("delta") int delta);
+
+    // Clientes que tienen citas con un médico específico (sin duplicados)
+    @Query("""
+        SELECT DISTINCT c FROM Cliente c
+        WHERE c.id IN (
+            SELECT ci.cliente.id FROM Cita ci WHERE ci.medico.id = :medicoId
+        )
+        ORDER BY c.apellido ASC
+        """)
+    Page<Cliente> findByMedicoId(@Param("medicoId") Integer medicoId, Pageable pageable);
+
+    @Query("""
+        SELECT DISTINCT c FROM Cliente c
+        WHERE c.id IN (
+            SELECT ci.cliente.id FROM Cita ci WHERE ci.medico.id = :medicoId
+        )
+        AND (LOWER(c.nombre) LIKE LOWER(CONCAT('%',:q,'%'))
+          OR LOWER(c.apellido) LIKE LOWER(CONCAT('%',:q,'%')))
+        ORDER BY c.apellido ASC
+        """)
+    Page<Cliente> findByMedicoIdAndNombre(@Param("medicoId") Integer medicoId,
+                                          @Param("q") String q,
+                                          Pageable pageable);
 }

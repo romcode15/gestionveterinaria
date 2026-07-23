@@ -28,23 +28,20 @@ async function handleSubmit() {
   authStore.clearError()
   try {
     await authStore.login({ username: form.username, password: form.password })
-    await router.push('/dashboard')
+
+    // Redirigir al portal correcto según el rol
+    if (authStore.isCliente) {
+      await router.push('/mi-portal')
+    } else if (authStore.isMedico) {
+      await router.push('/mi-agenda')
+    } else {
+      await router.push('/dashboard')
+    }
   } catch {
     // El error queda en authStore.error
   }
 }
 
-const demoUsers = [
-  { username: 'admin',      password: 'admin123', label: 'Administrador' },
-  { username: 'dra.garcia', password: 'vet123',   label: 'Veterinaria' },
-  { username: 'recepcion',  password: 'rec123',   label: 'Recepcionista' },
-]
-
-function fillDemo(username: string, password: string) {
-  form.username = username
-  form.password = password
-  authStore.clearError()
-}
 </script>
 
 <template>
@@ -91,39 +88,7 @@ function fillDemo(username: string, password: string) {
         </AppButton>
       </form>
 
-      <!-- Usuarios de demostración -->
-      <div class="mt-6 pt-6" style="border-top: 1px solid var(--border-default)">
-        <p class="text-xs text-center mb-3" style="color: var(--text-muted)">Usuarios de demostración</p>
-        <div class="grid grid-cols-3 gap-2">
-          <button
-            v-for="demo in demoUsers"
-            :key="demo.username"
-            type="button"
-            class="vg-demo-btn text-xs px-2 py-2 rounded-lg transition-colors text-center"
-            @click="fillDemo(demo.username, demo.password)"
-          >
-            {{ demo.label }}
-          </button>
-        </div>
-      </div>
     </div>
   </AuthLayout>
 </template>
 
-<style>
-.vg-demo-btn {
-  border: 1px solid var(--border-default);
-  color: var(--text-muted);
-  background: transparent;
-}
-.vg-demo-btn:hover {
-  border-color: #34d399;
-  background-color: rgba(5, 150, 105, 0.08);
-  color: #059669;
-}
-[data-theme="dark"] .vg-demo-btn:hover {
-  border-color: #34d399;
-  background-color: rgba(52, 211, 153, 0.12);
-  color: #34d399;
-}
-</style>

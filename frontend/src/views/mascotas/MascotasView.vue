@@ -22,7 +22,7 @@ import MascotaForm from '@/components/mascotas/MascotaForm.vue'
 
 import { useMascotasStore } from '@/stores/mascotas.store'
 import { useClientesStore } from '@/stores/clientes.store'
-
+import { useAuthStore } from '@/stores/auth.store'
 import type { Mascota, MascotaFormData } from '@/types'
 
 // Columnas de la tabla de mascotas
@@ -71,13 +71,17 @@ function calcularEdad(fechaNacimiento?: string): string {
 
 const mascotasStore = useMascotasStore()
 const clientesStore = useClientesStore()
+const authStore     = useAuthStore()
 
 // Carga inicial de información
 onMounted(async () => {
+  // Si es veterinario, limitar a sus propias mascotas
+  mascotasStore.medicoId = authStore.isMedico ? (authStore.medicoId ?? null) : null
   await Promise.all([
     mascotasStore.cargar({ page: 0 }),
     mascotasStore.cargarCatalogos(),
-    clientesStore.cargar({ size: 200 }),
+    // Solo cargar clientes para el formulario si no es veterinario (para crear mascotas)
+    ...(authStore.isMedico ? [] : [clientesStore.cargar({ size: 200 })]),
   ])
 })
 
@@ -175,7 +179,7 @@ async function handleSubmit(data: MascotaFormData) {
       <SearchToolbar
         v-model:search="mascotasStore.searchQuery"
         search-placeholder="Buscar por nombre, especie, propietario..."
-        :show-new-button="true"
+        :show-new-button="!authStore.isMedico"
         new-button-label="Nueva mascota"
         @new="abrirCrear"
       >
@@ -246,7 +250,7 @@ async function handleSubmit(data: MascotaFormData) {
             <!-- MASCOTA -->
             <template #cell-mascota="{ row }">
               <div class="flex items-center gap-3">
-                <MascotaAvatar :especie-nombre="row.especie.nombre" :nombre="row.nombre" size="sm" />
+                <MascotaAvatar :especie-nombre="row.especie?.nombre ?? ''" :nombre="row.nombre" size="sm" />
                 <div>
                   <p class="font-medium" style="color:var(--text-primary)">{{ row.nombre }}</p>
                   <p class="text-xs" style="color:var(--text-muted)">{{ row.clienteNombre }}</p>
@@ -256,8 +260,8 @@ async function handleSubmit(data: MascotaFormData) {
 
             <!-- ESPECIE -->
             <template #cell-especie_raza="{ row }">
-              <p style="color:var(--text-secondary)">{{ row.especie.nombre }}</p>
-              <p class="text-xs" style="color:var(--text-muted)">{{ row.raza.nombre }}</p>
+              <p style="color:var(--text-secondary)">{{ row.especie?.nombre ?? '-' }}</p>
+              <p class="text-xs" style="color:var(--text-muted)">{{ row.raza?.nombre ?? '-' }}</p>
             </template>
 
             <!-- SEXO -->
@@ -302,7 +306,7 @@ async function handleSubmit(data: MascotaFormData) {
             v-for="mascota in mascotasStore.mascotas"
             :key="mascota.id"
             :title="mascota.nombre"
-            :subtitle="`${mascota.especie.nombre} - ${mascota.raza.nombre}`"
+            :subtitle="`${mascota.especie?.nombre ?? '-'} - ${mascota.raza?.nombre ?? '-'}`"
             :status="{
               label: mascota.estado ? 'Activo' : 'Inactivo',
               variant: mascota.estado ? 'success' : 'danger',
@@ -310,7 +314,7 @@ async function handleSubmit(data: MascotaFormData) {
             }"
           >
             <template #avatar>
-              <MascotaAvatar :especie-nombre="mascota.especie.nombre" :nombre="mascota.nombre" size="md" />
+              <MascotaAvatar :especie-nombre="mascota.especie?.nombre ?? ''" :nombre="mascota.nombre" size="md" />
             </template>
 
             <template #details>

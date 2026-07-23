@@ -22,6 +22,8 @@ public class CitaDTO {
     private Integer tipoCitaId;
     private String tipoCitaNombre;
     private Integer tipoCitaDuracionMinutos;
+    private String tipoCitaColor;
+    private String tipoCitaDescripcion;
 
     @NotNull(message = "El médico es obligatorio")
     private Integer medicoId;
@@ -71,6 +73,12 @@ public class CitaDTO {
 
     public Integer getTipoCitaDuracionMinutos() { return tipoCitaDuracionMinutos; }
     public void setTipoCitaDuracionMinutos(Integer tipoCitaDuracionMinutos) { this.tipoCitaDuracionMinutos = tipoCitaDuracionMinutos; }
+
+    public String getTipoCitaColor() { return tipoCitaColor; }
+    public void setTipoCitaColor(String tipoCitaColor) { this.tipoCitaColor = tipoCitaColor; }
+
+    public String getTipoCitaDescripcion() { return tipoCitaDescripcion; }
+    public void setTipoCitaDescripcion(String tipoCitaDescripcion) { this.tipoCitaDescripcion = tipoCitaDescripcion; }
 
     public Integer getMedicoId() { return medicoId; }
     public void setMedicoId(Integer medicoId) { this.medicoId = medicoId; }

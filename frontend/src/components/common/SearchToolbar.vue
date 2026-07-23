@@ -30,7 +30,6 @@ const search = defineModel<string>('search', { default: '' })
           v-model="search"
           :placeholder="searchPlaceholder"
           class="w-full sm:flex-1"
-          @update:model-value="(val) => emit('update:search', val)"
         />
         <slot name="filters" />
       </div>

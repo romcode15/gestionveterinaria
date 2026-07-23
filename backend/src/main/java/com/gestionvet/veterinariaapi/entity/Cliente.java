@@ -53,6 +53,11 @@ public class Cliente {
     @OneToMany(mappedBy = "cliente", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     private List<Mascota> mascotas = new ArrayList<>();
 
+    // Usuario del sistema vinculado a este cliente
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", unique = true)
+    private Usuario usuario;
+
     // ── Lifecycle ──────────────────────────────────────────────────────────
 
     @PrePersist
@@ -108,4 +113,7 @@ public class Cliente {
 
     public List<Mascota> getMascotas() { return mascotas; }
     public void setMascotas(List<Mascota> mascotas) { this.mascotas = mascotas; }
+
+    public Usuario getUsuario() { return usuario; }
+    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
 }

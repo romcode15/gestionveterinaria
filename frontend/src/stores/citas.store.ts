@@ -1,20 +1,24 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Cita, CitaFormData, EstadoCita, TipoCita } from '@/types'
+import type { Medico } from '@/types'
 import type { PageParams } from '@/services/api'
 import { citasService } from '@/services/citas.service'
+import { medicosService } from '@/services/medicos.service'
 
 export const useCitasStore = defineStore('citas', () => {
   // ── Estado ─────────────────────────────────────────────────────────────
 
   const citas         = ref<Cita[]>([])
+  const citasHoy      = ref<Cita[]>([])
   const tiposCitaData = ref<TipoCita[]>([])
+  const medicosData   = ref<Medico[]>([])
   const loading       = ref(false)
   const error         = ref<string | null>(null)
 
   // Paginación
   const page          = ref(0)
-  const pageSize      = ref(20)
+  const pageSize      = ref(10)
   const totalElements = ref(0)
   const totalPages    = ref(0)
 
@@ -26,8 +30,26 @@ export const useCitasStore = defineStore('citas', () => {
   // ── Computed ────────────────────────────────────────────────────────────
 
   const tiposCita         = computed(() => tiposCitaData.value)
+  const medicos           = computed(() => medicosData.value)
   const hayMasPaginas     = computed(() => page.value < totalPages.value - 1)
   const hayPaginaAnterior = computed(() => page.value > 0)
+
+  // Citas filtradas por estado y médico (para la vista de lista)
+  const citasFiltradas = computed(() => {
+    let resultado = citas.value
+    if (filtroEstado.value !== 'todos') {
+      resultado = resultado.filter((c) => c.estado === filtroEstado.value)
+    }
+    if (filtroMedicoId.value !== null) {
+      resultado = resultado.filter((c) => c.medicoId === filtroMedicoId.value)
+    }
+    return resultado
+  })
+
+  // Getter por fecha — filtra el array en memoria (para la agenda de calendario)
+  function citasPorFecha(fecha: string): Cita[] {
+    return citas.value.filter((c) => c.fecha === fecha)
+  }
 
   // Estadísticas sobre la página actual (útil para la vista de agenda del día)
   const estadisticas = computed(() => ({
@@ -42,7 +64,12 @@ export const useCitasStore = defineStore('citas', () => {
   // ── Acciones ────────────────────────────────────────────────────────────
 
   async function cargarCatalogos(): Promise<void> {
-    tiposCitaData.value = await citasService.getAllTiposCita()
+    const [tipos, medicosPage] = await Promise.all([
+      citasService.getAllTiposCita(),
+      medicosService.getAll({ size: 100, sort: 'apellido', dir: 'asc' }),
+    ])
+    tiposCitaData.value = tipos
+    medicosData.value   = medicosPage.content
   }
 
   async function cargar(params: PageParams = {}): Promise<void> {
@@ -188,8 +215,36 @@ export const useCitasStore = defineStore('citas', () => {
     error.value = null
   }
 
+  async function cargarHoy(medicoId?: number | null): Promise<void> {
+    const hoy = new Date().toISOString().split('T')[0]!
+    try {
+      if (medicoId) {
+        // Veterinario: usa su portal propio
+        const { api } = await import('@/services/api')
+        const res = await api.getPaged<Record<string, unknown>>('/api/portal/medico/citas/fecha', { fecha: hoy, size: 50, sort: 'horaInicio', dir: 'asc' })
+        citasHoy.value = res.content.map((raw) => ({
+          ...(raw as unknown as Cita),
+          tipoCita: {
+            id:              raw['tipoCitaId']              as number,
+            nombre:          (raw['tipoCitaNombre']          as string) ?? '',
+            duracionMinutos: (raw['tipoCitaDuracionMinutos'] as number) ?? 0,
+            color:           (raw['tipoCitaColor']           as string) ?? '#059669',
+            descripcion:     raw['tipoCitaDescripcion']      as string | undefined,
+          },
+        }))
+      } else {
+        // Admin/recepcionista: todas las citas de hoy (ya pasan por citasService con mapper)
+        const res = await citasService.getByFecha(hoy, { size: 50, sort: 'horaInicio', dir: 'asc' })
+        citasHoy.value = res.content
+      }
+    } catch {
+      citasHoy.value = []
+    }
+  }
+
   return {
     citas,
+    citasHoy,
     loading,
     error,
     page,
@@ -200,6 +255,9 @@ export const useCitasStore = defineStore('citas', () => {
     filtroMedicoId,
     filtroEstado,
     tiposCita,
+    medicos,
+    citasFiltradas,
+    citasPorFecha,
     estadisticas,
     hayMasPaginas,
     hayPaginaAnterior,
@@ -207,6 +265,7 @@ export const useCitasStore = defineStore('citas', () => {
     cargarCatalogos,
     cargarPorFecha,
     cargarMisCitas,
+    cargarHoy,
     irAPagina,
     siguientePagina,
     paginaAnterior,

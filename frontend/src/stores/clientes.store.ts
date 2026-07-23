@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import type { Cliente, ClienteFormData } from '@/types'
 import type { PageParams } from '@/services/api'
 import { clientesService } from '@/services/clientes.service'
+import { api } from '@/services/api'
 
 export const useClientesStore = defineStore('clientes', () => {
   // ── Estado ─────────────────────────────────────────────────────────────
@@ -13,13 +14,16 @@ export const useClientesStore = defineStore('clientes', () => {
 
   // Paginación
   const page         = ref(0)
-  const pageSize     = ref(20)
+  const pageSize     = ref(10)
   const totalElements = ref(0)
   const totalPages   = ref(0)
 
-  // Filtros (se envían al backend, no se filtran en el cliente)
+  // Filtros
   const searchQuery  = ref('')
   const filtroEstado = ref<'todos' | 'activo' | 'inactivo'>('todos')
+
+  // Si está activo, el store usa el portal médico en lugar del endpoint general
+  const medicoId     = ref<number | null>(null)
 
   // ── Computed ────────────────────────────────────────────────────────────
 
@@ -40,7 +44,17 @@ export const useClientesStore = defineStore('clientes', () => {
       }
 
       let res
-      if (filtroEstado.value !== 'todos') {
+      if (medicoId.value) {
+        // Veterinario: solo sus clientes via portal médico
+        const portalParams: PageParams = { ...p }
+        if (searchQuery.value.trim()) portalParams.busqueda = searchQuery.value.trim()
+        try {
+          res = await api.getPaged<Cliente>('/api/portal/medico/clientes', portalParams)
+        } catch {
+          // Si el backend aún no tiene el endpoint, mostrar vacío sin error crítico
+          clientes.value = []; totalElements.value = 0; totalPages.value = 0; loading.value = false; return
+        }
+      } else if (filtroEstado.value !== 'todos') {
         res = await clientesService.porEstado(filtroEstado.value, p)
       } else if (searchQuery.value.trim()) {
         res = await clientesService.buscar(searchQuery.value.trim(), p)
@@ -48,11 +62,11 @@ export const useClientesStore = defineStore('clientes', () => {
         res = await clientesService.getAll(p)
       }
 
-      clientes.value   = res.content
-      page.value       = res.number
-      pageSize.value   = res.size
+      clientes.value      = res.content
+      page.value          = res.number
+      pageSize.value      = res.size
       totalElements.value = res.totalElements
-      totalPages.value = res.totalPages
+      totalPages.value    = res.totalPages
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Error al cargar clientes'
     } finally {
@@ -127,6 +141,7 @@ export const useClientesStore = defineStore('clientes', () => {
     totalPages,
     searchQuery,
     filtroEstado,
+    medicoId,
     hayMasPaginas,
     hayPaginaAnterior,
     cargar,

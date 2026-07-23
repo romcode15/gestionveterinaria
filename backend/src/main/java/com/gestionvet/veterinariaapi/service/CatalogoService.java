@@ -1,5 +1,6 @@
 package com.gestionvet.veterinariaapi.service;
 
+import com.gestionvet.veterinariaapi.dto.RolDTO;
 import com.gestionvet.veterinariaapi.entity.*;
 import com.gestionvet.veterinariaapi.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,12 @@ public class CatalogoService {
 
     public List<Rol> listarRoles() {
         return rolRepository.findAll();
+    }
+
+    public List<RolDTO> listarRolesDTO() {
+        return rolRepository.findAll().stream()
+                .map(r -> new RolDTO(r.getId(), r.getNombre(), r.getDescripcion(), null))
+                .toList();
     }
 
     public List<Especie> listarEspecies() {

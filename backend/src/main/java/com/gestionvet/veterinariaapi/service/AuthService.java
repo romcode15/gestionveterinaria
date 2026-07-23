@@ -2,11 +2,13 @@ package com.gestionvet.veterinariaapi.service;
 
 import com.gestionvet.veterinariaapi.dto.LoginRequest;
 import com.gestionvet.veterinariaapi.dto.LoginResponse;
+import com.gestionvet.veterinariaapi.dto.PermisoDTO;
+import com.gestionvet.veterinariaapi.dto.RolDTO;
+import com.gestionvet.veterinariaapi.entity.Permiso;
 import com.gestionvet.veterinariaapi.entity.Rol;
 import com.gestionvet.veterinariaapi.entity.Usuario;
 import com.gestionvet.veterinariaapi.repository.UsuarioRepository;
 import com.gestionvet.veterinariaapi.security.JwtUtil;
-import com.gestionvet.veterinariaapi.security.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,9 +28,6 @@ public class AuthService {
 
     @Autowired
     private AuthenticationManager authenticationManager;
-
-    @Autowired
-    private UserDetailsServiceImpl userDetailsService;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -41,7 +41,7 @@ public class AuthService {
      *  1. AuthenticationManager verifica username + password con BCrypt
      *  2. Si es válido, genera el JWT
      *  3. Actualiza ultimo_acceso en la BD
-     *  4. Retorna LoginResponse con token + datos del usuario
+     *  4. Retorna LoginResponse con token + datos del usuario + roles con PERMISOS
      */
     @Transactional
     public LoginResponse login(LoginRequest request) {
@@ -61,24 +61,60 @@ public class AuthService {
             // 3. Generar JWT con roles incluidos en claims
             String token = jwtUtil.generateToken(userDetails);
 
-            // 4. Actualizar ultimo_acceso en la BD
-            Usuario usuario = usuarioRepository.findByUsername(request.getUsername())
+            // 4. 🔥 Buscar usuario con roles Y PERMISOS precargados (EntityGraph)
+            // userDetails.getUsername() devuelve el username real (Spring Security lo normaliza)
+            Usuario usuario = usuarioRepository
+                    .findByUsernameWithRolesAndPermisos(userDetails.getUsername())
                     .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            // 5. Actualizar ultimo_acceso en la BD
             usuario.setUltimoAcceso(LocalDateTime.now());
             usuarioRepository.save(usuario);
 
-            // 5. Construir respuesta con datos del usuario
-            return new LoginResponse(
+            // 6. 🔥 Construir lista de RolDTO con sus permisos
+            List<RolDTO> rolesDTO = usuario.getRoles().stream().map(rol -> {
+                RolDTO rolDTO = new RolDTO();
+                rolDTO.setId(rol.getId());
+                rolDTO.setNombre(rol.getNombre().toLowerCase());
+                rolDTO.setDescripcion(rol.getDescripcion());
+
+                // Mapear permisos a PermisoDTO
+                List<PermisoDTO> permisosDTO = rol.getPermisos().stream().map(permiso -> {
+                    PermisoDTO pDTO = new PermisoDTO();
+                    pDTO.setId(permiso.getId());
+                    pDTO.setNombre(permiso.getNombre());
+                    pDTO.setDescripcion(permiso.getDescripcion());
+                    pDTO.setModulo(permiso.getModulo());
+                    return pDTO;
+                }).collect(Collectors.toList());
+
+                rolDTO.setPermisos(permisosDTO);
+                return rolDTO;
+            }).collect(Collectors.toList());
+
+            // 7. Construir respuesta con datos del usuario + roles con permisos
+            LoginResponse response = new LoginResponse(
                     token,
                     usuario.getId(),
                     usuario.getUsername(),
                     usuario.getEmail(),
                     usuario.getNombre(),
                     usuario.getApellido(),
-                    usuario.getRoles().stream()
-                            .map(Rol::getNombre)
-                            .collect(Collectors.toSet())
+                    rolesDTO
             );
+
+            // 8. Incluir IDs de vinculación (cliente, médico, recepcionista)
+            if (usuario.getCliente() != null) {
+                response.setClienteId(usuario.getCliente().getId());
+            }
+            if (usuario.getMedico() != null) {
+                response.setMedicoId(usuario.getMedico().getId());
+            }
+            if (usuario.getRecepcionista() != null) {
+                response.setRecepcionistaId(usuario.getRecepcionista().getId());
+            }
+
+            return response;
 
         } catch (DisabledException e) {
             throw new IllegalArgumentException("Usuario inactivo. Contacte al administrador.");

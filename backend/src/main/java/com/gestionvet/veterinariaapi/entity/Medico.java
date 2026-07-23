@@ -51,6 +51,11 @@ public class Medico {
     )
     private Set<Especialidad> especialidades = new HashSet<>();
 
+    // Usuario del sistema vinculado a este médico
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", unique = true)
+    private Usuario usuario;
+
     // ── Lifecycle ──────────────────────────────────────────────────────────
 
     @PrePersist
@@ -101,4 +106,7 @@ public class Medico {
 
     public Set<Especialidad> getEspecialidades() { return especialidades; }
     public void setEspecialidades(Set<Especialidad> especialidades) { this.especialidades = especialidades; }
+
+    public Usuario getUsuario() { return usuario; }
+    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
 }

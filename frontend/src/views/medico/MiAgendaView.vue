@@ -26,6 +26,7 @@ const fechaHoy           = new Date().toISOString().split('T')[0]!
 const fechaSeleccionada  = ref(fechaHoy)
 const perfilMedico       = ref<{ nombre: string; apellido: string; especialidades: { nombre: string }[] } | null>(null)
 const cambiandoEstado    = ref<number | null>(null)
+const loading            = ref(false)
 
 onMounted(async () => {
   await Promise.all([
@@ -44,7 +45,32 @@ async function cargarPerfil() {
 }
 
 async function cargarAgenda() {
-  await citasStore.cargarPorFecha(fechaSeleccionada.value)
+  // Usa el portal médico: filtra automáticamente por el médico autenticado
+  loading.value = true
+  citasStore.error = null
+  try {
+    const res = await api.getPaged<Record<string, unknown>>('/api/portal/medico/citas/fecha', {
+      fecha: fechaSeleccionada.value,
+      size: 50,
+      sort: 'horaInicio',
+      dir: 'asc',
+    })
+    // Reconstruir objeto anidado tipoCita a partir de los campos planos del DTO
+    citasStore.citas = res.content.map((raw) => ({
+      ...(raw as unknown as Cita),
+      tipoCita: {
+        id:              raw['tipoCitaId']              as number,
+        nombre:          (raw['tipoCitaNombre']          as string) ?? '',
+        duracionMinutos: (raw['tipoCitaDuracionMinutos'] as number) ?? 0,
+        color:           (raw['tipoCitaColor']           as string) ?? '#059669',
+        descripcion:     raw['tipoCitaDescripcion']      as string | undefined,
+      },
+    }))
+  } catch (e) {
+    citasStore.error = e instanceof Error ? e.message : 'Error al cargar agenda'
+  } finally {
+    loading.value = false
+  }
 }
 
 async function cambiarFecha(delta: number) {
@@ -150,7 +176,7 @@ function labelSiguienteEstado(estado: EstadoCita): string {
           <h2 class="font-semibold" style="color: var(--text-primary)">Citas del día</h2>
         </div>
 
-        <LoadingState v-if="citasStore.loading">Cargando agenda...</LoadingState>
+        <LoadingState v-if="loading">Cargando agenda...</LoadingState>
 
         <EmptyState
           v-else-if="citasStore.citas.length === 0"

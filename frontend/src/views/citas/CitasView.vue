@@ -23,7 +23,11 @@ const citasStore = useCitasStore()
 const mascotasStore = useMascotasStore()
 
 onMounted(async () => {
-  await Promise.all([citasStore.cargar(), mascotasStore.cargar()])
+  await Promise.all([
+    citasStore.cargar(),
+    citasStore.cargarCatalogos(),
+    mascotasStore.cargar(),
+  ])
 })
 
 const showModal = ref(false)
@@ -168,7 +172,7 @@ function formatFecha(fecha: string): string {
               <!-- Franja de color del tipo de cita -->
               <div
                 class="w-1 rounded-full shrink-0 self-stretch"
-                :style="{ backgroundColor: cita.tipoCita.color }"
+                :style="{ backgroundColor: cita.tipoCita?.color ?? '#6b7280' }"
               />
 
               <div class="flex-1 min-w-0 flex flex-col gap-2">
@@ -187,7 +191,7 @@ function formatFecha(fecha: string): string {
                       <p class="font-semibold text-sm" style="color: var(--text-primary)">
                         {{ cita.mascotaNombre }}
                       </p>
-                      <AppBadge variant="neutral" size="sm">{{ cita.tipoCita.nombre }}</AppBadge>
+                      <AppBadge variant="neutral" size="sm">{{ cita.tipoCita?.nombre ?? '-' }}</AppBadge>
                     </div>
                     <p class="text-xs truncate mt-0.5" style="color: var(--text-secondary)">{{ cita.motivo }}</p>
                     <p class="text-xs truncate mt-0.5" style="color: var(--text-muted)">

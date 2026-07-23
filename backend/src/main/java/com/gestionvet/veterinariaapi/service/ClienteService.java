@@ -2,8 +2,10 @@ package com.gestionvet.veterinariaapi.service;
 
 import com.gestionvet.veterinariaapi.dto.ClienteDTO;
 import com.gestionvet.veterinariaapi.entity.Cliente;
+import com.gestionvet.veterinariaapi.entity.Usuario;
 import com.gestionvet.veterinariaapi.exception.ResourceNotFoundException;
 import com.gestionvet.veterinariaapi.repository.ClienteRepository;
+import com.gestionvet.veterinariaapi.repository.MascotaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +21,12 @@ public class ClienteService {
 
     @Autowired
     private ClienteRepository clienteRepository;
+
+    @Autowired
+    private MascotaRepository mascotaRepository;
+
+    @Autowired
+    private UsuarioService usuarioService;
 
     // ── Listar todos (paginado) ────────────────────────────────────────────
 
@@ -66,7 +74,19 @@ public class ClienteService {
                 "Ya existe un cliente con el email: " + dto.getEmail());
         }
         Cliente cliente = toEntity(dto);
-        return toDTO(clienteRepository.save(cliente));
+        cliente = clienteRepository.save(cliente);
+
+        // Auto-crear usuario con rol 'cliente' — username y password = numeroDocumento
+        Usuario usuario = usuarioService.crearUsuarioAutomatico(
+                dto.getNombre(), dto.getApellido(),
+                dto.getEmail(), dto.getNumeroDocumento(), "cliente");
+
+        // Vincular bidireccionalmente
+        usuario.setCliente(cliente);
+        cliente.setUsuario(usuario);
+        clienteRepository.save(cliente);
+
+        return toDTO(cliente);
     }
 
     // ── Actualizar ─────────────────────────────────────────────────────────
@@ -124,6 +144,12 @@ public class ClienteService {
         dto.setEstado(c.getEstado());
         dto.setObservaciones(c.getObservaciones());
         dto.setCreatedAt(c.getCreatedAt());
+        // Contar mascotas en tiempo real — navegando la relación cliente.id
+        dto.setNumeroMascotas((int) mascotaRepository.countByCliente_Id(c.getId()));
+        if (c.getUsuario() != null) {
+            dto.setUsuarioId(c.getUsuario().getId());
+            dto.setUsername(c.getUsuario().getUsername());
+        }
         return dto;
     }
 

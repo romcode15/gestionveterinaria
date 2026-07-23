@@ -174,6 +174,27 @@ function handleSubmit() {
       :rows="2"
     />
 
+    <!-- Credenciales de acceso — solo lectura, solo en edición -->
+    <div v-if="props.cliente?.username" class="p-3 rounded-lg space-y-1"
+      style="background: var(--bg-hover); border: 1px solid var(--border-color)">
+      <p class="text-xs font-semibold" style="color: var(--text-muted)">ACCESO AL SISTEMA</p>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-xs" style="color: var(--text-secondary)">Usuario:</span>
+        <span class="text-sm font-mono font-medium" style="color: var(--text-primary)">
+          {{ props.cliente.username }}
+        </span>
+        <span class="text-xs ml-4" style="color: var(--text-secondary)">Contraseña:</span>
+        <span class="text-sm font-mono" style="color: var(--text-muted)">
+          (cifrada — se cambia desde el perfil del usuario)
+        </span>
+      </div>
+    </div>
+    <div v-else-if="!props.cliente" class="p-3 rounded-lg text-sm"
+      style="background: rgba(16,185,129,0.08); color: var(--text-secondary); border: 1px solid rgba(16,185,129,0.2)">
+      ✅ Al registrar, se creará usuario de acceso automáticamente.<br>
+      <strong>Usuario y contraseña inicial:</strong> número de documento
+    </div>
+
     <FormActions
       :loading="props.loading"
       :submit-label="props.cliente ? 'Guardar cambios' : 'Registrar cliente'"

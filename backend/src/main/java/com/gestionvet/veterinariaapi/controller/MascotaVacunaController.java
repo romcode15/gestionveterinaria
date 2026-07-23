@@ -29,6 +29,20 @@ public class MascotaVacunaController {
     @Autowired
     private MascotaVacunaService service;
 
+    @GetMapping
+    @Operation(summary = "Listar registros de vacunación paginados",
+               description = "Soporta filtros opcionales: medicoId, estado. Para el rol VETERINARIO pasar su medicoId.")
+    @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
+    public ResponseEntity<Page<MascotaVacunaDTO>> listar(
+            @RequestParam(required = false) Integer medicoId,
+            @RequestParam(required = false) String estado,
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("fechaAplicacion").descending());
+        return ResponseEntity.ok(service.listar(medicoId, estado, pageable));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Buscar registro de vacuna por ID")
     @ApiResponses({

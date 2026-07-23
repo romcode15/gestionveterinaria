@@ -43,6 +43,21 @@ public class MascotaVacunaService {
         return mascotaVacunaRepository.findByMascotaId(mascotaId, pageable).map(this::toDTO);
     }
 
+    // ── Listado general con filtros opcionales ─────────────────────────────
+
+    @Transactional(readOnly = true)
+    public Page<MascotaVacunaDTO> listar(Integer medicoId, String estado, Pageable pageable) {
+        if (medicoId != null && estado != null && !estado.equals("todos")) {
+            return mascotaVacunaRepository.findByMedicoIdAndEstado(medicoId, estado, pageable).map(this::toDTO);
+        } else if (medicoId != null) {
+            return mascotaVacunaRepository.findByMedicoId(medicoId, pageable).map(this::toDTO);
+        } else if (estado != null && !estado.equals("todos")) {
+            return mascotaVacunaRepository.findByEstado(estado, pageable).map(this::toDTO);
+        } else {
+            return mascotaVacunaRepository.findAll(pageable).map(this::toDTO);
+        }
+    }
+
     // ── Buscar por ID ──────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)

@@ -18,14 +18,17 @@ import { api } from '@/services/api'
 
 interface AuditoriaEntry {
   id: number
-  fecha: string
-  usuario: string
+  usuarioId: number | null
+  username: string
   accion: string
   entidad: string
-  registroId: number
-  ip: string
-  resultado: 'exitoso' | 'fallido'
-  detalles?: string
+  entidadId: string | null
+  descripcion: string | null
+  ipOrigen: string | null
+  endpoint: string | null
+  exitoso: boolean
+  errorMensaje: string | null
+  createdAt: string
 }
 
 // ── Estado ─────────────────────────────────────────────────────────────────
@@ -48,13 +51,13 @@ const soloErrores = ref(false)
 // ── Columnas de la tabla ───────────────────────────────────────────────────
 
 const columns: TableColumn<AuditoriaEntry>[] = [
-  { key: 'fecha',     label: 'Fecha' },
-  { key: 'usuario',   label: 'Usuario' },
-  { key: 'accion',    label: 'Acción' },
-  { key: 'entidad',   label: 'Entidad' },
-  { key: 'registroId', label: 'ID', align: 'center' },
-  { key: 'ip',        label: 'IP' },
-  { key: 'resultado', label: 'Resultado', align: 'center' },
+  { key: 'createdAt',  label: 'Fecha' },
+  { key: 'username',   label: 'Usuario' },
+  { key: 'accion',     label: 'Acción' },
+  { key: 'entidad',    label: 'Entidad' },
+  { key: 'entidadId',  label: 'ID', align: 'center' },
+  { key: 'ipOrigen',   label: 'IP' },
+  { key: 'exitoso',    label: 'Resultado', align: 'center' },
 ]
 
 // ── Opciones de filtros ────────────────────────────────────────────────────
@@ -74,7 +77,7 @@ async function cargarAuditoria(p = 0) {
   loading.value = true
   error.value = null
   try {
-    const params: Record<string, unknown> = { page: p, size: pageSize.value, sort: 'fecha', dir: 'desc' }
+    const params: Record<string, unknown> = { page: p, size: pageSize.value, sort: 'createdAt', dir: 'desc' }
     let endpoint = '/api/auditoria'
 
     if (filtroUsuario.value) {
@@ -194,14 +197,14 @@ function formatFecha(fecha: string): string {
           row-key="id"
         >
           <!-- Fecha formateada -->
-          <template #cell-fecha="{ value }">
+          <template #cell-createdAt="{ value }">
             <span class="text-xs whitespace-nowrap" style="color: var(--text-secondary)">
               {{ formatFecha(value as string) }}
             </span>
           </template>
 
           <!-- Usuario destacado -->
-          <template #cell-usuario="{ value }">
+          <template #cell-username="{ value }">
             <span class="font-medium" style="color: var(--text-primary)">{{ value }}</span>
           </template>
 
@@ -213,18 +216,18 @@ function formatFecha(fecha: string): string {
           </template>
 
           <!-- IP en muted -->
-          <template #cell-ip="{ value }">
-            <span class="text-xs" style="color: var(--text-muted)">{{ value }}</span>
+          <template #cell-ipOrigen="{ value }">
+            <span class="text-xs" style="color: var(--text-muted)">{{ value ?? '—' }}</span>
           </template>
 
           <!-- Badge de resultado -->
-          <template #cell-resultado="{ value }">
+          <template #cell-exitoso="{ value }">
             <AppBadge
-              :variant="value === 'exitoso' ? 'success' : 'danger'"
+              :variant="value ? 'success' : 'danger'"
               size="sm"
               dot
             >
-              {{ value }}
+              {{ value ? 'exitoso' : 'fallido' }}
             </AppBadge>
           </template>
         </AppTable>

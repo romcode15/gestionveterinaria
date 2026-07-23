@@ -15,6 +15,10 @@ import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
 import FormActions from '@/components/forms/FormActions.vue'
 import { api } from '@/services/api'
+import { useAuthStore } from '@/stores/auth.store'
+
+const authStore = useAuthStore()
+const esMedico  = authStore.isMedico
 
 // ── Tipos locales ──────────────────────────────────────────────────────────
 
@@ -76,7 +80,8 @@ const mascotas = ref<MascotaSimple[]>([])
 const form = ref({
   mascotaId: null as number | null,
   vacunaId: null as number | null,
-  medicoId: null as number | null,
+  // Si el usuario es veterinario, preseleccionar su medicoId
+  medicoId: esMedico ? (authStore.medicoId ?? null) : null as number | null,
   fechaAplicacion: new Date().toISOString().split('T')[0],
   lote: '',
   fechaProximaDosis: '',
@@ -127,6 +132,8 @@ async function cargarRegistros(p = 0) {
     const params: Record<string, unknown> = { page: p, size: pageSize.value, sort: 'fechaAplicacion', dir: 'desc' }
     if (filtroEstado.value !== 'todos') params.estado = filtroEstado.value
     if (searchQuery.value) params.search = searchQuery.value
+    // Si es veterinario, filtrar solo sus registros
+    if (esMedico && authStore.medicoId) params.medicoId = authStore.medicoId
 
     const res = await api.getPaged<VacunaRegistro>('/api/mascota-vacunas', params)
     registros.value = res.content
@@ -176,7 +183,8 @@ function resetForm() {
   form.value = {
     mascotaId: null,
     vacunaId: null,
-    medicoId: null,
+    // Mantener medicoId preseleccionado para veterinario
+    medicoId: esMedico ? (authStore.medicoId ?? null) : null,
     fechaAplicacion: new Date().toISOString().split('T')[0],
     lote: '',
     fechaProximaDosis: '',
@@ -373,7 +381,9 @@ function formatFecha(f: string) {
           :error="formErrors.vacunaId"
           @update:model-value="calcularProximaDosis"
         />
+        <!-- Médico: solo visible para admin/recepcionista; para veterinario se preselecciona automáticamente -->
         <AppSelect
+          v-if="!esMedico"
           v-model="form.medicoId"
           label="Médico"
           :options="medicoOptions"
@@ -381,6 +391,13 @@ function formatFecha(f: string) {
           required
           :error="formErrors.medicoId"
         />
+        <div v-else class="p-3 rounded-lg text-sm" style="background: var(--bg-hover); border: 1px solid var(--border-color)">
+          <p class="text-xs font-semibold mb-1" style="color: var(--text-muted)">MÉDICO APLICADOR</p>
+          <p style="color: var(--text-primary)">
+            {{ medicos.find(m => m.id === form.medicoId)?.nombre }}
+            {{ medicos.find(m => m.id === form.medicoId)?.apellido }}
+          </p>
+        </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <AppInput
             v-model="form.fechaAplicacion"

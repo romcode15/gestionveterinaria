@@ -1,6 +1,6 @@
 package com.gestionvet.veterinariaapi.dto;
 
-import java.util.Set;
+import java.util.List;
 
 public class LoginResponse {
 
@@ -11,7 +11,10 @@ public class LoginResponse {
     private String email;
     private String nombre;
     private String apellido;
-    private Set<String> roles;
+    private List<RolDTO> roles;
+    private Integer clienteId;
+    private Integer medicoId;
+    private Integer recepcionistaId;
 
     // ── Constructor completo ───────────────────────────────────────────────
 
@@ -19,7 +22,7 @@ public class LoginResponse {
 
     public LoginResponse(String token, Integer id, String username,
                          String email, String nombre, String apellido,
-                         Set<String> roles) {
+                         List<RolDTO> roles) {
         this.token    = token;
         this.id       = id;
         this.username = username;
@@ -52,6 +55,15 @@ public class LoginResponse {
     public String getApellido() { return apellido; }
     public void setApellido(String apellido) { this.apellido = apellido; }
 
-    public Set<String> getRoles() { return roles; }
-    public void setRoles(Set<String> roles) { this.roles = roles; }
+    public List<RolDTO> getRoles() { return roles; }
+    public void setRoles(List<RolDTO> roles) { this.roles = roles; }
+
+    public Integer getClienteId() { return clienteId; }
+    public void setClienteId(Integer clienteId) { this.clienteId = clienteId; }
+
+    public Integer getMedicoId() { return medicoId; }
+    public void setMedicoId(Integer medicoId) { this.medicoId = medicoId; }
+
+    public Integer getRecepcionistaId() { return recepcionistaId; }
+    public void setRecepcionistaId(Integer recepcionistaId) { this.recepcionistaId = recepcionistaId; }
 }

@@ -20,6 +20,8 @@ export interface Persona {
 export interface Cliente extends Persona {
   numeroMascotas: number
   observaciones?: string
+  usuarioId?: number
+  username?: string
 }
 
 export interface Especialidad {
@@ -33,6 +35,8 @@ export interface Medico extends Persona {
   especialidades: Especialidad[]
   disponible: boolean
   foto?: string
+  usuarioId?: number
+  username?: string
 }
 
 export interface Empleado extends Persona {
@@ -64,4 +68,23 @@ export interface MedicoFormData {
   numeroLicencia: string
   especialidadesIds: number[]
   disponible: boolean
+}
+
+export interface Recepcionista {
+  id: number
+  nombre: string
+  apellido: string
+  email: string
+  telefono?: string
+  estado: EstadoPersona
+  createdAt: string
+  usuarioId?: number
+  username?: string
+}
+
+export interface RecepcionistaFormData {
+  nombre: string
+  apellido: string
+  email: string
+  telefono?: string
 }

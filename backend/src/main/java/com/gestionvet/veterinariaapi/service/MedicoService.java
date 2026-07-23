@@ -3,6 +3,7 @@ package com.gestionvet.veterinariaapi.service;
 import com.gestionvet.veterinariaapi.dto.MedicoDTO;
 import com.gestionvet.veterinariaapi.entity.Especialidad;
 import com.gestionvet.veterinariaapi.entity.Medico;
+import com.gestionvet.veterinariaapi.entity.Usuario;
 import com.gestionvet.veterinariaapi.exception.ResourceNotFoundException;
 import com.gestionvet.veterinariaapi.repository.EspecialidadRepository;
 import com.gestionvet.veterinariaapi.repository.MedicoRepository;
@@ -23,6 +24,7 @@ public class MedicoService {
 
     @Autowired private MedicoRepository medicoRepository;
     @Autowired private EspecialidadRepository especialidadRepository;
+    @Autowired private UsuarioService usuarioService;
 
     @Transactional(readOnly = true)
     public Page<MedicoDTO> listarTodos(Pageable pageable) {
@@ -55,7 +57,19 @@ public class MedicoService {
             throw new IllegalArgumentException("Ya existe un médico con la licencia: " + dto.getNumeroLicencia());
         }
         Medico medico = toEntity(dto);
-        return toDTO(medicoRepository.save(medico));
+        medico = medicoRepository.save(medico);
+
+        // Auto-crear usuario con rol 'veterinario' — username y password = numeroDocumento
+        Usuario usuario = usuarioService.crearUsuarioAutomatico(
+                dto.getNombre(), dto.getApellido(),
+                dto.getEmail(), dto.getNumeroDocumento(), "veterinario");
+
+        // Vincular bidireccionalmente
+        usuario.setMedico(medico);
+        medico.setUsuario(usuario);
+        medicoRepository.save(medico);
+
+        return toDTO(medico);
     }
 
     public MedicoDTO actualizar(Integer id, MedicoDTO dto) {
@@ -123,6 +137,10 @@ public class MedicoService {
                 m.getEspecialidades().stream().map(Especialidad::getId).collect(Collectors.toSet()));
         dto.setEspecialidadesNombres(
                 m.getEspecialidades().stream().map(Especialidad::getNombre).collect(Collectors.toSet()));
+        if (m.getUsuario() != null) {
+            dto.setUsuarioId(m.getUsuario().getId());
+            dto.setUsername(m.getUsuario().getUsername());
+        }
         return dto;
     }
 

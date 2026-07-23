@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -55,6 +56,18 @@ public class PortalMedicoController {
         return ResponseEntity.ok(service.misCitasHoy(pageable));
     }
 
+    @GetMapping("/citas/fecha")
+    @Operation(summary = "Ver mis citas de una fecha específica",
+               description = "Agenda de una fecha concreta del médico autenticado, ordenada por hora de inicio.")
+    public ResponseEntity<Page<CitaDTO>> misCitasPorFecha(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) java.time.LocalDate fecha,
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "50") int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("horaInicio").ascending());
+        return ResponseEntity.ok(service.misCitasPorFecha(fecha, pageable));
+    }
+
     @GetMapping("/diagnosticos")
     @Operation(summary = "Ver los diagnósticos que he registrado",
                description = "Solo devuelve diagnósticos registrados por el médico autenticado.")
@@ -64,5 +77,29 @@ public class PortalMedicoController {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return ResponseEntity.ok(service.misDiagnosticos(pageable));
+    }
+
+    @GetMapping("/clientes")
+    @Operation(summary = "Ver mis clientes",
+               description = "Solo devuelve los clientes que tienen citas con el médico autenticado.")
+    public ResponseEntity<Page<ClienteDTO>> misClientes(
+            @RequestParam(required = false)    String busqueda,
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("apellido").ascending());
+        return ResponseEntity.ok(service.misClientes(busqueda, pageable));
+    }
+
+    @GetMapping("/mascotas")
+    @Operation(summary = "Ver mis mascotas (pacientes)",
+               description = "Solo devuelve las mascotas que tienen citas con el médico autenticado.")
+    public ResponseEntity<Page<MascotaDTO>> misMascotas(
+            @RequestParam(required = false)    String busqueda,
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("nombre").ascending());
+        return ResponseEntity.ok(service.misMascotas(busqueda, pageable));
     }
 }

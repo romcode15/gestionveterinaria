@@ -3,7 +3,7 @@ import { api, type SpringPage, type PageParams } from './api'
 
 export const clientesService = {
   getAll(params: PageParams = {}): Promise<SpringPage<Cliente>> {
-    return api.getPaged<Cliente>('/api/clientes', { size: 20, sort: 'apellido', dir: 'asc', ...params })
+    return api.getPaged<Cliente>('/api/clientes', { size: 10, sort: 'apellido', dir: 'asc', ...params })
   },
 
   buscar(nombre: string, params: PageParams = {}): Promise<SpringPage<Cliente>> {
