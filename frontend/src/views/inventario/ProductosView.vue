@@ -436,7 +436,6 @@ function stockBajo(stock: number, minimo: number): boolean {
 
         <EmptyState
           v-else-if="productos.length === 0"
-          icon="📦"
           title="Sin productos"
           message="No hay productos registrados en el inventario"
         />
@@ -470,13 +469,22 @@ function stockBajo(stock: number, minimo: number): boolean {
                     style="color: var(--text-muted)"
                   >
                     Stock: {{ p.stockActual }} / Min: {{ p.stockMinimo }}
-                    <span v-if="stockBajo(p.stockActual, p.stockMinimo)">⚠️</span>
+                    <svg v-if="stockBajo(p.stockActual, p.stockMinimo)"
+                      class="w-3.5 h-3.5 inline text-yellow-500 ml-0.5" fill="none"
+                      stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
                   </span>
                 </div>
               </div>
               <div class="flex gap-2 shrink-0 flex-wrap">
                 <AppButton size="sm" variant="ghost" @click="verLotes(p)">
-                  📦 Lotes
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                  </svg>
+                  Lotes
                 </AppButton>
                 <AppButton size="sm" variant="ghost" @click="abrirEditarProducto(p)">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

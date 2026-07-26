@@ -289,7 +289,6 @@ function limpiarFiltro() {
       <!-- Estado vacío sin filtro (solo admin/recepcionista sin mascota seleccionada) -->
       <EmptyState
         v-if="!filtroMascotaId && !filtroMedicoId && !loading"
-        icon="📋"
         title="Accede desde el historial de una mascota"
         message="O registra un nuevo diagnóstico indicando el ID de la cita completada"
       >
@@ -312,7 +311,6 @@ function limpiarFiltro() {
 
         <EmptyState
           v-else-if="diagnosticos.length === 0"
-          icon="🩺"
           title="Sin diagnósticos"
           message="No hay diagnósticos registrados para esta mascota"
         />

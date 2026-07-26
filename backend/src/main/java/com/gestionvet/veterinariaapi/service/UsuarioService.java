@@ -11,6 +11,8 @@ import com.gestionvet.veterinariaapi.repository.RecepcionistaRepository;
 import com.gestionvet.veterinariaapi.repository.RolRepository;
 import com.gestionvet.veterinariaapi.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +32,13 @@ public class UsuarioService {
     @Autowired private MedicoRepository       medicoRepository;
     @Autowired private RecepcionistaRepository recepcionistaRepository;
     @Autowired private PasswordEncoder        passwordEncoder;
+
+    @Transactional(readOnly = true)
+    public Page<UsuarioDTO> listarPaginado(String busqueda, String rol, Pageable pageable) {
+        String b = (busqueda != null && !busqueda.isBlank()) ? busqueda.trim() : null;
+        String r = (rol      != null && !rol.equals("todos") && !rol.isBlank()) ? rol.trim() : null;
+        return usuarioRepository.buscarPaginado(b, r, pageable).map(this::toDTO);
+    }
 
     @Transactional(readOnly = true)
     public List<UsuarioDTO> listarTodos() {

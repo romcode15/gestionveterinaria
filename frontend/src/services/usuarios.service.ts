@@ -1,5 +1,5 @@
 import type { UsuarioFormData } from '@/types'
-import { api } from './api'
+import { api, type SpringPage, type PageParams } from './api'
 
 export interface UsuarioListItem {
   id: number
@@ -17,8 +17,8 @@ export interface UsuarioListItem {
 }
 
 export const usuariosService = {
-  getAll(): Promise<UsuarioListItem[]> {
-    return api.get<UsuarioListItem[]>('/api/usuarios')
+  getAll(params: PageParams & { busqueda?: string; rol?: string } = {}): Promise<SpringPage<UsuarioListItem>> {
+    return api.getPaged<UsuarioListItem>('/api/usuarios', { size: 15, sort: 'apellido', dir: 'asc', ...params })
   },
 
   getById(id: number): Promise<UsuarioListItem> {

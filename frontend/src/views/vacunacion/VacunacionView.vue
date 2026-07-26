@@ -262,9 +262,13 @@ function formatFecha(f: string) {
       <div v-if="alertas.proximas > 0 || alertas.vencidas > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <AppCard v-if="alertas.proximas > 0" padding="sm" class="border-l-4" style="border-color: var(--color-warning)">
           <div class="flex items-center justify-between">
-            <div>
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 shrink-0 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
               <p class="text-sm font-medium" style="color: var(--text-primary)">
-                ⚠️ {{ alertas.proximas }} vacuna(s) próxima(s) a vencer (30 días)
+                {{ alertas.proximas }} vacuna(s) próxima(s) a vencer (30 días)
               </p>
             </div>
             <AppButton size="sm" variant="ghost" @click="filtroEstado = 'vigente'; searchQuery = ''">
@@ -274,9 +278,12 @@ function formatFecha(f: string) {
         </AppCard>
         <AppCard v-if="alertas.vencidas > 0" padding="sm" class="border-l-4" style="border-color: var(--color-danger)">
           <div class="flex items-center justify-between">
-            <div>
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
               <p class="text-sm font-medium" style="color: var(--text-primary)">
-                ❌ {{ alertas.vencidas }} vacuna(s) vencidas
+                {{ alertas.vencidas }} vacuna(s) vencidas
               </p>
             </div>
             <AppButton size="sm" variant="ghost" @click="filtroEstado = 'vencida'; searchQuery = ''">
@@ -315,7 +322,6 @@ function formatFecha(f: string) {
 
         <EmptyState
           v-else-if="registros.length === 0"
-          icon="💉"
           title="Sin registros"
           message="No se encontraron registros de vacunación"
         />

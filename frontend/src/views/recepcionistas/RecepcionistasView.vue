@@ -141,9 +141,13 @@ async function handleEliminar(r: Recepcionista) {
           </template>
 
           <template #cell-acceso="{ row }">
-            <span v-if="row.username" class="text-xs font-mono px-2 py-0.5 rounded"
+            <span v-if="row.username" class="text-xs font-mono px-2 py-0.5 rounded flex items-center gap-1 w-fit"
               style="background: var(--bg-hover); color: var(--text-secondary)">
-              👤 {{ row.username }}
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+              </svg>
+              {{ row.username }}
             </span>
             <span v-else class="text-xs" style="color: var(--text-muted)">Sin acceso</span>
           </template>
@@ -222,10 +226,15 @@ async function handleEliminar(r: Recepcionista) {
           placeholder="Teléfono (opcional)"
         />
 
-        <div v-if="!editando" class="p-3 rounded-lg text-sm"
+        <div v-if="!editando" class="p-3 rounded-lg text-sm flex items-start gap-2"
           style="background: rgba(16,185,129,0.08); color: var(--text-secondary); border: 1px solid rgba(16,185,129,0.2)">
-          ✅ Se creará automáticamente un usuario de acceso.<br>
-          <strong>Usuario:</strong> email · <strong>Contraseña inicial:</strong> email
+          <svg class="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span>
+            Se creará automáticamente un usuario de acceso.<br>
+            <strong>Usuario:</strong> email · <strong>Contraseña inicial:</strong> email
+          </span>
         </div>
 
         <div class="flex justify-end gap-3 pt-2">

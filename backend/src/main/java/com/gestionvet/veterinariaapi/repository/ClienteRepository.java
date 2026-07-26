@@ -18,6 +18,7 @@ public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
     Optional<Cliente> findByEmail(String email);
     Optional<Cliente> findByNumeroDocumento(String numeroDocumento);
     Page<Cliente> findByEstado(String estado, Pageable pageable);
+    long countByEstado(String estado);
 
     // Incrementar o decrementar numero_mascotas directamente en BD
     @Modifying

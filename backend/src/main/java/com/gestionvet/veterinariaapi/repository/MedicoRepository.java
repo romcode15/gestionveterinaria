@@ -12,6 +12,7 @@ import java.util.Optional;
 public interface MedicoRepository extends JpaRepository<Medico, Integer> {
 
     Page<Medico> findByDisponible(Boolean disponible, Pageable pageable);
+    long countByDisponibleTrue();
     Optional<Medico> findByEmail(String email);
     Optional<Medico> findByNumeroLicencia(String numeroLicencia);
     Page<Medico> findByEstado(String estado, Pageable pageable);

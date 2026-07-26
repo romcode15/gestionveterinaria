@@ -3,12 +3,17 @@ package com.gestionvet.veterinariaapi.controller;
 import com.gestionvet.veterinariaapi.dto.UsuarioDTO;
 import com.gestionvet.veterinariaapi.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,9 +32,18 @@ public class UsuarioController {
     private UsuarioService usuarioService;
 
     @GetMapping
-    @Operation(summary = "Listar todos los usuarios")
-    public ResponseEntity<List<UsuarioDTO>> listarTodos() {
-        return ResponseEntity.ok(usuarioService.listarTodos());
+    @Operation(summary = "Listar usuarios paginado",
+               description = "Soporta filtro por búsqueda (nombre, username, email) y por rol.")
+    public ResponseEntity<Page<UsuarioDTO>> listarTodos(
+            @Parameter(description = "Término de búsqueda")
+            @RequestParam(required = false) String busqueda,
+            @Parameter(description = "Filtrar por rol: admin, veterinario, recepcionista, cliente")
+            @RequestParam(required = false) String rol,
+            @RequestParam(defaultValue = "0")   int page,
+            @RequestParam(defaultValue = "15")  int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("apellido", "nombre").ascending());
+        return ResponseEntity.ok(usuarioService.listarPaginado(busqueda, rol, pageable));
     }
 
     @GetMapping("/{id}")

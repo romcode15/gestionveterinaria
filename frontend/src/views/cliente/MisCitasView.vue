@@ -29,10 +29,18 @@ const misCitas = computed(() =>
 )
 
 const summaryItems = computed(() => [
-  { label: 'Total', value: misCitas.value.length, icon: '📋' },
-  { label: 'Próximas', value: misCitas.value.filter((c) => c.estado === 'pendiente' || c.estado === 'confirmada').length, icon: '⏳' },
-  { label: 'Completadas', value: misCitas.value.filter((c) => c.estado === 'completada').length, icon: '✅' },
-  { label: 'Canceladas', value: misCitas.value.filter((c) => c.estado === 'cancelada').length, icon: '❌' },
+  { label: 'Total',      value: misCitas.value.length,
+    svgPath: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
+    iconColor: '#6366f1', iconBg: 'rgba(99,102,241,0.12)' },
+  { label: 'Próximas',   value: misCitas.value.filter((c) => c.estado === 'pendiente' || c.estado === 'confirmada').length,
+    svgPath: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+    iconColor: '#f59e0b', iconBg: 'rgba(245,158,11,0.12)' },
+  { label: 'Completadas', value: misCitas.value.filter((c) => c.estado === 'completada').length,
+    svgPath: 'M5 13l4 4L19 7',
+    iconColor: '#059669', iconBg: 'rgba(5,150,105,0.12)' },
+  { label: 'Canceladas', value: misCitas.value.filter((c) => c.estado === 'cancelada').length,
+    svgPath: 'M6 18L18 6M6 6l12 12',
+    iconColor: '#ef4444', iconBg: 'rgba(239,68,68,0.12)' },
 ])
 
 function formatFecha(fecha: string): string {
@@ -64,7 +72,6 @@ function formatFecha(fecha: string): string {
         <div class="divide-y" style="border-color: var(--border-color)">
           <EmptyState
             v-if="misCitas.length === 0"
-            icon="📅"
             title="Sin citas"
             message="No tienes citas registradas"
           />

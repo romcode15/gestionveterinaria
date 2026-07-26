@@ -21,9 +21,9 @@ import MascotaAvatar from '@/components/mascotas/MascotaAvatar.vue'
 import MascotaForm from '@/components/mascotas/MascotaForm.vue'
 
 import { useMascotasStore } from '@/stores/mascotas.store'
-import { useClientesStore } from '@/stores/clientes.store'
 import { useAuthStore } from '@/stores/auth.store'
-import type { Mascota, MascotaFormData } from '@/types'
+import { clientesService } from '@/services/clientes.service'
+import type { Mascota, MascotaFormData, Cliente } from '@/types'
 
 // Columnas de la tabla de mascotas
 const columns = [
@@ -70,8 +70,10 @@ function calcularEdad(fechaNacimiento?: string): string {
 }
 
 const mascotasStore = useMascotasStore()
-const clientesStore = useClientesStore()
 const authStore     = useAuthStore()
+
+// Lista local de clientes solo para el dropdown del formulario — no contamina clientesStore
+const clientesDropdown = ref<Cliente[]>([])
 
 // Carga inicial de información
 onMounted(async () => {
@@ -80,8 +82,11 @@ onMounted(async () => {
   await Promise.all([
     mascotasStore.cargar({ page: 0 }),
     mascotasStore.cargarCatalogos(),
-    // Solo cargar clientes para el formulario si no es veterinario (para crear mascotas)
-    ...(authStore.isMedico ? [] : [clientesStore.cargar({ size: 200 })]),
+    // Solo cargar clientes para el formulario si no es veterinario
+    ...(authStore.isMedico ? [] : [
+      clientesService.getAll({ size: 200, sort: 'apellido', dir: 'asc' })
+        .then(res => { clientesDropdown.value = res.content })
+    ]),
   ])
 })
 
@@ -289,7 +294,10 @@ async function handleSubmit(data: MascotaFormData) {
             <!-- ACCIONES -->
             <template #actions="{ row }">
               <AppButton variant="ghost" size="sm" title="Editar mascota" @click.stop="abrirEditar(row)">
-                ✏️
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
               </AppButton>
             </template>
           </AppTable>
@@ -340,14 +348,16 @@ async function handleSubmit(data: MascotaFormData) {
 
             <template #actions>
               <AppButton variant="ghost" size="sm" @click="abrirEditar(mascota)">
-                ✏️
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
               </AppButton>
             </template>
           </EntityCard>
 
           <EmptyState
             v-if="mascotasStore.mascotas.length === 0 && !mascotasStore.loading"
-            icon="🐾"
             title="No se encontraron mascotas"
             message="Intenta con otro filtro o registra una nueva mascota"
           />
@@ -377,7 +387,7 @@ async function handleSubmit(data: MascotaFormData) {
         :mascota="mascotaEditando"
         :especies="mascotasStore.especies"
         :razas="mascotasStore.razas"
-        :clientes="clientesStore.clientes"
+        :clientes="clientesDropdown"
         :loading="loading"
         @submit="handleSubmit"
         @cancel="showModal = false"

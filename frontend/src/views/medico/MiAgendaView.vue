@@ -90,11 +90,21 @@ async function cambiarEstado(cita: Cita, estado: EstadoCita) {
 }
 
 const stats = computed(() => [
-  { label: 'Total',       value: citasStore.citas.length,                                      icon: '📋' },
-  { label: 'Pendientes',  value: citasStore.citas.filter(c => c.estado === 'pendiente').length,  icon: '⏳' },
-  { label: 'Confirmadas', value: citasStore.citas.filter(c => c.estado === 'confirmada').length, icon: '✅' },
-  { label: 'En curso',    value: citasStore.citas.filter(c => c.estado === 'en_curso').length,   icon: '🔄' },
-  { label: 'Completadas', value: citasStore.citas.filter(c => c.estado === 'completada').length, icon: '✔️' },
+  { label: 'Total',       value: citasStore.citas.length,
+    svgPath: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
+    iconColor: '#6366f1', iconBg: 'rgba(99,102,241,0.12)' },
+  { label: 'Pendientes',  value: citasStore.citas.filter(c => c.estado === 'pendiente').length,
+    svgPath: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+    iconColor: '#f59e0b', iconBg: 'rgba(245,158,11,0.12)' },
+  { label: 'Confirmadas', value: citasStore.citas.filter(c => c.estado === 'confirmada').length,
+    svgPath: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+    iconColor: '#3b82f6', iconBg: 'rgba(59,130,246,0.12)' },
+  { label: 'En curso',    value: citasStore.citas.filter(c => c.estado === 'en_curso').length,
+    svgPath: 'M13 10V3L4 14h7v7l9-11h-7z',
+    iconColor: '#059669', iconBg: 'rgba(5,150,105,0.12)' },
+  { label: 'Completadas', value: citasStore.citas.filter(c => c.estado === 'completada').length,
+    svgPath: 'M5 13l4 4L19 7',
+    iconColor: '#10b981', iconBg: 'rgba(16,185,129,0.12)' },
 ])
 
 const fechaLabel = computed(() => {
@@ -180,7 +190,6 @@ function labelSiguienteEstado(estado: EstadoCita): string {
 
         <EmptyState
           v-else-if="citasStore.citas.length === 0"
-          icon="📅"
           title="Sin citas"
           message="No tienes citas para este día"
         />

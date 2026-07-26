@@ -57,9 +57,15 @@ const hora = computed(() => {
 })
 
 const summaryItems = computed(() => [
-  { label: 'Mis mascotas', value: misMascotas.value.length, icon: '🐾' },
-  { label: 'Citas próximas', value: proximasCitas.value.length, icon: '📅' },
-  { label: 'Citas completadas', value: misCitas.value.filter((c) => c.estado === 'completada').length, icon: '✅' },
+  { label: 'Mis mascotas',       value: misMascotas.value.length,
+    svgPath: 'M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z',
+    iconColor: '#0d9488', iconBg: 'rgba(13,148,136,0.12)' },
+  { label: 'Citas próximas',     value: proximasCitas.value.length,
+    svgPath: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+    iconColor: '#f59e0b', iconBg: 'rgba(245,158,11,0.12)' },
+  { label: 'Citas completadas',  value: misCitas.value.filter((c) => c.estado === 'completada').length,
+    svgPath: 'M5 13l4 4L19 7',
+    iconColor: '#059669', iconBg: 'rgba(5,150,105,0.12)' },
 ])
 
 function formatFecha(fecha: string): string {
@@ -80,7 +86,7 @@ function formatFecha(fecha: string): string {
     <!-- Saludo -->
     <div class="mb-6">
       <h2 class="text-2xl font-bold" style="color: var(--text-primary)">
-        {{ hora }}, {{ authStore.usuario?.nombre }} 👋
+        {{ hora }}, {{ authStore.usuario?.nombre }}
       </h2>
       <p class="mt-1" style="color: var(--text-muted)">Aquí puedes ver tus mascotas y citas</p>
     </div>
@@ -108,7 +114,6 @@ function formatFecha(fecha: string): string {
 
         <EmptyState
           v-else
-          icon="🐾"
           title="Sin mascotas"
           message="Aún no tienes mascotas registradas"
         />
@@ -125,7 +130,6 @@ function formatFecha(fecha: string): string {
           <div class="divide-y" style="border-color: var(--border-color)">
             <EmptyState
               v-if="proximasCitas.length === 0"
-              icon="📅"
               title="Sin citas próximas"
               message="No tienes citas programadas próximamente"
             />

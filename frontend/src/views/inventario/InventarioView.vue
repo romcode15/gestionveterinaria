@@ -117,8 +117,12 @@ function formatFecha(f: string) {
         <!-- Stock bajo -->
         <AppCard>
           <div class="flex items-center justify-between mb-3">
-            <h3 class="font-semibold" style="color: var(--text-primary)">
-              ⚠️ Stock bajo ({{ alertas.stockBajo.length }})
+            <h3 class="font-semibold flex items-center gap-2" style="color: var(--text-primary)">
+              <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
+              Stock bajo ({{ alertas.stockBajo.length }})
             </h3>
             <AppBadge variant="danger">{{ alertas.stockBajo.length }}</AppBadge>
           </div>
@@ -148,8 +152,12 @@ function formatFecha(f: string) {
         <!-- Lotes próximos a vencer -->
         <AppCard>
           <div class="flex items-center justify-between mb-3">
-            <h3 class="font-semibold" style="color: var(--text-primary)">
-              📅 Lotes próximos a vencer ({{ alertas.lotesProximos.length }})
+            <h3 class="font-semibold flex items-center gap-2" style="color: var(--text-primary)">
+              <svg class="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              Lotes próximos a vencer ({{ alertas.lotesProximos.length }})
             </h3>
             <AppBadge variant="warning">{{ alertas.lotesProximos.length }}</AppBadge>
           </div>
@@ -180,8 +188,11 @@ function formatFecha(f: string) {
         <!-- Lotes vencidos -->
         <AppCard>
           <div class="flex items-center justify-between mb-3">
-            <h3 class="font-semibold" style="color: var(--text-primary)">
-              ❌ Lotes vencidos ({{ alertas.lotesVencidos.length }})
+            <h3 class="font-semibold flex items-center gap-2" style="color: var(--text-primary)">
+              <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+              Lotes vencidos ({{ alertas.lotesVencidos.length }})
             </h3>
             <AppBadge variant="danger">{{ alertas.lotesVencidos.length }}</AppBadge>
           </div>
@@ -210,7 +221,7 @@ function formatFecha(f: string) {
         </AppCard>
       </template>
 
-      <EmptyState v-else icon="📦" title="Sin alertas" message="No hay alertas de inventario" />
+      <EmptyState v-else title="Sin alertas" message="No hay alertas de inventario" />
     </div>
   </DashboardLayout>
 </template>

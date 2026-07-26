@@ -175,7 +175,6 @@ const vacunasFiltradas = computed(() => {
 
         <EmptyState
           v-else-if="vacunasFiltradas.length === 0"
-          icon="💉"
           title="Sin vacunas"
           message="No hay vacunas registradas en el catálogo"
         />

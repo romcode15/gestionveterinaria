@@ -4,8 +4,12 @@ import com.gestionvet.veterinariaapi.dto.AlertaInventarioDTO;
 import com.gestionvet.veterinariaapi.dto.AlertaVacunaDTO;
 import com.gestionvet.veterinariaapi.dto.DashboardDTO;
 import com.gestionvet.veterinariaapi.dto.DashboardDTO.*;
+import com.gestionvet.veterinariaapi.dto.ResumenGeneralDTO;
 import com.gestionvet.veterinariaapi.repository.CitaRepository;
+import com.gestionvet.veterinariaapi.repository.ClienteRepository;
 import com.gestionvet.veterinariaapi.repository.DiagnosticoRepository;
+import com.gestionvet.veterinariaapi.repository.MascotaRepository;
+import com.gestionvet.veterinariaapi.repository.MedicoRepository;
 import com.gestionvet.veterinariaapi.repository.MovimientoInventarioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,10 +30,26 @@ public class DashboardService {
     private static final Logger log = LoggerFactory.getLogger(DashboardService.class);
 
     @Autowired private CitaRepository               citaRepository;
+    @Autowired private ClienteRepository            clienteRepository;
+    @Autowired private MascotaRepository            mascotaRepository;
+    @Autowired private MedicoRepository             medicoRepository;
     @Autowired private DiagnosticoRepository        diagnosticoRepository;
     @Autowired private MovimientoInventarioRepository movimientoRepository;
     @Autowired private MascotaVacunaService         vacunaService;
     @Autowired private InventarioService            inventarioService;
+
+    /**
+     * Conteos globales reales para las tarjetas del dashboard.
+     * Cada valor es un COUNT directo a BD — nunca un tamaño de página.
+     */
+    public ResumenGeneralDTO obtenerResumenGeneral() {
+        return new ResumenGeneralDTO(
+            clienteRepository.countByEstado("activo"),
+            mascotaRepository.countByEstado("activo"),
+            medicoRepository.countByDisponibleTrue(),
+            citaRepository.countByFecha(LocalDate.now())
+        );
+    }
 
     /**
      * Dashboard principal.

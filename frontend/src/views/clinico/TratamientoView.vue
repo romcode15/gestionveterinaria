@@ -281,7 +281,6 @@ const puedeEditar = computed(() =>
       <!-- Sin tratamiento registrado -->
       <EmptyState
         v-else-if="!tratamiento && !modoEdicion"
-        icon="💊"
         title="Aún no hay tratamiento registrado"
         message="Registra el plan de medicación para esta consulta"
       >
@@ -420,7 +419,6 @@ const puedeEditar = computed(() =>
 
           <EmptyState
             v-if="form.detalles.length === 0"
-            icon="💊"
             title="Sin medicamentos"
             message="Haz clic en 'Agregar' para añadir un medicamento"
           />

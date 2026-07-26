@@ -120,7 +120,6 @@ function formatFecha(f: string): string {
         <!-- Sin datos -->
         <EmptyState
           v-else-if="diagnosticos.length === 0"
-          icon="📋"
           title="Sin diagnósticos"
           message="No has registrado diagnósticos aún"
         />

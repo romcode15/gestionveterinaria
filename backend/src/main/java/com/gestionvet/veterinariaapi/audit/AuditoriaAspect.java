@@ -73,6 +73,9 @@ public class AuditoriaAspect {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
             username = auth.getName();
+        } else if (nombreMetodo.startsWith("login")) {
+            // En el login el usuario aún no está autenticado — leer el username del argumento del método
+            username = extraerUsernameDeArgs(pjp.getArgs());
         }
 
         // ── Determinar entidad y acción ────────────────────────────────────
@@ -126,9 +129,11 @@ public class AuditoriaAspect {
             if (attrs == null) return null;
             HttpServletRequest request = attrs.getRequest();
             String xForwardedFor = request.getHeader("X-Forwarded-For");
-            return (xForwardedFor != null && !xForwardedFor.isBlank())
+            String ip = (xForwardedFor != null && !xForwardedFor.isBlank())
                     ? xForwardedFor.split(",")[0].trim()
                     : request.getRemoteAddr();
+            // Normalizar loopback IPv6 a IPv4 para mayor legibilidad
+            return "0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip) ? "127.0.0.1" : ip;
         } catch (Exception e) {
             return null;
         }
@@ -161,5 +166,26 @@ public class AuditoriaAspect {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /**
+     * Extrae el username del DTO de login (LoginRequest) desde los argumentos del método.
+     * Usado cuando el usuario aún no está autenticado (endpoint público /api/auth/login).
+     */
+    private String extraerUsernameDeArgs(Object[] args) {
+        if (args == null) return "anonimo";
+        for (Object arg : args) {
+            if (arg == null) continue;
+            try {
+                // LoginRequest tiene getUsername() o getEmail()
+                Object usernameVal = arg.getClass().getMethod("getUsername").invoke(arg);
+                if (usernameVal instanceof String s && !s.isBlank()) return s;
+            } catch (Exception ignored) {}
+            try {
+                Object emailVal = arg.getClass().getMethod("getEmail").invoke(arg);
+                if (emailVal instanceof String s && !s.isBlank()) return s;
+            } catch (Exception ignored) {}
+        }
+        return "anonimo";
     }
 }

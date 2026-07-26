@@ -8,6 +8,7 @@ import AppAlert from '@/components/ui/AppAlert.vue'
 import AppTable from '@/components/ui/AppTable.vue'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import AppButton from '@/components/ui/AppButton.vue'
+import AppPagination from '@/components/ui/AppPagination.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import SearchToolbar from '@/components/common/SearchToolbar.vue'
 import UsuarioForm from '@/components/usuarios/UsuarioForm.vue'
@@ -25,10 +26,18 @@ const columns = [
 
 const usuariosStore = useUsuariosStore()
 
-onMounted(() => usuariosStore.cargar())
+onMounted(() => usuariosStore.cargar({ page: 0 }))
 
-// Filtro de rol reactivo
-watch(() => usuariosStore.filtroRol, () => {/* computed filters automatically */})
+// Filtros disparan búsqueda en el servidor desde página 0
+let searchTimer: ReturnType<typeof setTimeout>
+watch(() => usuariosStore.searchQuery, () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => usuariosStore.cargar({ page: 0 }), 400)
+})
+
+watch(() => usuariosStore.filtroRol, () => {
+  usuariosStore.cargar({ page: 0 })
+})
 
 const showModal       = ref(false)
 const usuarioEditando = ref<UsuarioListItem | null>(null)
@@ -153,13 +162,13 @@ function getInitials(u: UsuarioListItem): string {
       <AppCard padding="none">
         <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--border-color)">
           <h2 class="font-semibold" style="color: var(--text-primary)">
-            {{ usuariosStore.usuariosFiltrados.length }} usuario(s)
+            {{ usuariosStore.totalElements }} usuario(s)
           </h2>
         </div>
 
         <AppTable
           :columns="columns"
-          :rows="usuariosStore.usuariosFiltrados"
+          :rows="usuariosStore.usuarios"
           :loading="usuariosStore.loading"
           empty-message="No se encontraron usuarios"
         >
@@ -232,6 +241,17 @@ function getInitials(u: UsuarioListItem): string {
             </div>
           </template>
         </AppTable>
+
+        <div class="px-4 border-t" style="border-color: var(--border-color)">
+          <AppPagination
+            :page="usuariosStore.page"
+            :total-pages="usuariosStore.totalPages"
+            :total-elements="usuariosStore.totalElements"
+            :page-size="usuariosStore.pageSize"
+            :loading="usuariosStore.loading"
+            @change="usuariosStore.irAPagina"
+          />
+        </div>
       </AppCard>
     </div>
 

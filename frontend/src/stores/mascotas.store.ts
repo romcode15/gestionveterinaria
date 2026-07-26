@@ -67,7 +67,15 @@ export const useMascotasStore = defineStore('mascotas', () => {
         const portalParams: PageParams = { ...p }
         if (searchQuery.value.trim()) portalParams.busqueda = searchQuery.value.trim()
         try {
-          res = await api.getPaged<Mascota>('/api/portal/medico/mascotas', portalParams)
+          const raw = await api.getPaged<Record<string, unknown>>('/api/portal/medico/mascotas', portalParams)
+          res = {
+            ...raw,
+            content: raw.content.map((r) => ({
+              ...(r as unknown as Mascota),
+              especie: { id: r['especieId'] as number, nombre: (r['especieNombre'] as string) ?? '' },
+              raza:    { id: r['razaId']    as number, nombre: (r['razaNombre']    as string) ?? '', especieId: r['especieId'] as number },
+            })),
+          }
         } catch {
           mascotas.value = []; totalElements.value = 0; totalPages.value = 0; loading.value = false; return
         }

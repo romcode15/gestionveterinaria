@@ -10,34 +10,26 @@ import StatusBadge from '@/components/common/StatusBadge.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 
 import { useAuthStore } from '@/stores/auth.store'
-import { useClientesStore } from '@/stores/clientes.store'
-import { useMascotasStore } from '@/stores/mascotas.store'
+import { useDashboardStore } from '@/stores/dashboard.store'
 import { useCitasStore } from '@/stores/citas.store'
-import { useMedicosStore } from '@/stores/medicos.store'
+import ChatWidget from '@/components/chat/ChatWidget.vue'
 
-const router        = useRouter()
-const authStore     = useAuthStore()
-const clientesStore = useClientesStore()
-const mascotasStore = useMascotasStore()
-const citasStore    = useCitasStore()
-const medicosStore  = useMedicosStore()
+const router         = useRouter()
+const authStore      = useAuthStore()
+const dashboardStore = useDashboardStore()
+const citasStore     = useCitasStore()
 
 onMounted(async () => {
-  const esMedico = authStore.isMedico
-
-  if (esMedico) {
-    // Veterinario: carga solo sus datos
+  if (authStore.isMedico) {
+    // Veterinario: solo sus datos del día
     await Promise.all([
       citasStore.cargarHoy(authStore.medicoId),
       citasStore.cargar({ page: 0, size: 10 }),
     ])
   } else {
-    // Admin / recepcionista: carga datos globales
+    // Admin / recepcionista: resumen general (1 request) + citas de hoy
     await Promise.all([
-      clientesStore.cargar(),
-      mascotasStore.cargar(),
-      citasStore.cargar(),
-      medicosStore.cargar(),
+      dashboardStore.cargarResumen(),
       citasStore.cargarHoy(null),
     ])
   }
@@ -86,15 +78,15 @@ const stats = computed(() => {
   return [
     {
       label: 'Clientes activos',
-      value: (clientesStore.clientes ?? []).filter((c) => c.estado === 'activo').length,
+      value: dashboardStore.resumen?.totalClientesActivos ?? 0,
       icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
-      iconColor: 'var(--color-primary)',
-      iconBg: 'rgba(16,185,129,0.12)',
+      iconColor: '#059669',
+      iconBg: 'rgba(5,150,105,0.12)',
       to: '/clientes',
     },
     {
-      label: 'Mascotas registradas',
-      value: (mascotasStore.mascotas ?? []).filter((m) => m.estado === 'activo').length,
+      label: 'Mascotas activas',
+      value: dashboardStore.resumen?.totalMascotasActivas ?? 0,
       icon: 'M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z',
       iconColor: '#0d9488',
       iconBg: 'rgba(13,148,136,0.12)',
@@ -102,7 +94,7 @@ const stats = computed(() => {
     },
     {
       label: 'Citas hoy',
-      value: citasStore.citasHoy.length,
+      value: dashboardStore.resumen?.totalCitasHoy ?? 0,
       icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
       iconColor: '#d97706',
       iconBg: 'rgba(217,119,6,0.12)',
@@ -110,7 +102,7 @@ const stats = computed(() => {
     },
     {
       label: 'Médicos disponibles',
-      value: (medicosStore.medicos ?? []).filter((m) => m.disponible).length,
+      value: dashboardStore.resumen?.totalMedicosDisponibles ?? 0,
       icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
       iconColor: '#2563eb',
       iconBg: 'rgba(37,99,235,0.12)',
@@ -147,7 +139,7 @@ const accesosRapidos = [
     <!-- Saludo -->
     <div class="mb-6">
       <h2 class="text-2xl font-bold" style="color: var(--text-primary)">
-        {{ hora }}, {{ authStore.usuario?.nombre ?? 'Usuario' }} 👋
+        {{ hora }}, {{ authStore.usuario?.nombre ?? 'Usuario' }}
       </h2>
       <p class="mt-1" style="color: var(--text-muted)">
         {{ authStore.isMedico ? 'Aquí tienes tu agenda de hoy' : 'Aquí tienes el resumen de hoy' }}
@@ -199,7 +191,6 @@ const accesosRapidos = [
 
           <EmptyState
             v-if="citasHoyOrdenadas.length === 0"
-            icon="📅"
             title="Sin citas"
             message="No hay citas programadas para hoy"
           />
@@ -233,9 +224,9 @@ const accesosRapidos = [
 
       <!-- Panel derecho -->
       <div class="space-y-4">
-        <!-- Estado de citas -->
+        <!-- Estado de citas del día -->
         <AppCard>
-          <h3 class="font-semibold mb-4" style="color: var(--text-primary)">Estado de citas</h3>
+          <h3 class="font-semibold mb-4" style="color: var(--text-primary)">Estado de citas hoy</h3>
           <div class="space-y-3">
             <div class="flex items-center justify-between">
               <span class="text-sm" style="color: var(--text-secondary)">Pendientes</span>
@@ -300,4 +291,7 @@ const accesosRapidos = [
       </div>
     </div>
   </DashboardLayout>
+
+  <!-- Chatbot IA: solo visible para el administrador -->
+  <ChatWidget v-if="authStore.isAdmin()" />
 </template>

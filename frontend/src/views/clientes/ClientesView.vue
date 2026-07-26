@@ -30,7 +30,9 @@ const authStore     = useAuthStore()
 onMounted(() => {
   // Si es veterinario, limitar a sus propios clientes
   clientesStore.medicoId = authStore.isMedico ? (authStore.medicoId ?? null) : null
-  clientesStore.cargar({ page: 0 })
+  // Resetear pageSize al default para evitar que una llamada anterior con size grande rompa la paginación
+  clientesStore.pageSize = 10
+  clientesStore.cargar({ page: 0, size: 10 })
 })
 
 // Debounce de 400ms para no disparar una petición por cada tecla

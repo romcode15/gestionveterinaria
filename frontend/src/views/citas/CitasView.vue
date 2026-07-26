@@ -58,11 +58,21 @@ const medicoOptions = computed(() => [
 ])
 
 const summaryItems = computed(() => [
-  { label: 'Total',       value: citasStore.estadisticas.total,      icon: '📋' },
-  { label: 'Pendientes',  value: citasStore.estadisticas.pendientes,  icon: '⏳' },
-  { label: 'Confirmadas', value: citasStore.estadisticas.confirmadas, icon: '✅' },
-  { label: 'Completadas', value: citasStore.estadisticas.completadas, icon: '✔️' },
-  { label: 'Canceladas',  value: citasStore.estadisticas.canceladas,  icon: '❌' },
+  { label: 'Total',       value: citasStore.estadisticas.total,
+    svgPath: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
+    iconColor: '#6366f1', iconBg: 'rgba(99,102,241,0.12)' },
+  { label: 'Pendientes',  value: citasStore.estadisticas.pendientes,
+    svgPath: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+    iconColor: '#f59e0b', iconBg: 'rgba(245,158,11,0.12)' },
+  { label: 'Confirmadas', value: citasStore.estadisticas.confirmadas,
+    svgPath: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+    iconColor: '#3b82f6', iconBg: 'rgba(59,130,246,0.12)' },
+  { label: 'Completadas', value: citasStore.estadisticas.completadas,
+    svgPath: 'M5 13l4 4L19 7',
+    iconColor: '#059669', iconBg: 'rgba(5,150,105,0.12)' },
+  { label: 'Canceladas',  value: citasStore.estadisticas.canceladas,
+    svgPath: 'M6 18L18 6M6 6l12 12',
+    iconColor: '#ef4444', iconBg: 'rgba(239,68,68,0.12)' },
 ])
 
 function abrirCrear() {
@@ -158,7 +168,6 @@ function formatFecha(fecha: string): string {
         <div class="divide-y" style="border-color: var(--border-color)">
           <EmptyState
             v-if="citasStore.citasFiltradas.length === 0"
-            icon="📅"
             title="Sin citas"
             message="No se encontraron citas con los filtros seleccionados"
           />

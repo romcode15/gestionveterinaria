@@ -135,6 +135,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST,   "/api/mascota-vacunas").hasAnyRole("ADMIN", "VETERINARIO")
                 .requestMatchers(HttpMethod.PUT,    "/api/mascota-vacunas/**").hasAnyRole("ADMIN", "VETERINARIO")
 
+                // ── Chat IA (solo ADMIN) ───────────────────────────────────
+                .requestMatchers("/api/chat/**").hasRole("ADMIN")
+
                 // ── Auditoría (solo ADMIN) ─────────────────────────────────
                 .requestMatchers("/api/auditoria/**").hasRole("ADMIN")
 

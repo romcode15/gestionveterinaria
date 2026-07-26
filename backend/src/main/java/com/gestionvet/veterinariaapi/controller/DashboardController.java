@@ -1,6 +1,7 @@
 package com.gestionvet.veterinariaapi.controller;
 
 import com.gestionvet.veterinariaapi.dto.DashboardDTO;
+import com.gestionvet.veterinariaapi.dto.ResumenGeneralDTO;
 import com.gestionvet.veterinariaapi.service.DashboardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -20,6 +21,17 @@ public class DashboardController {
 
     @Autowired
     private DashboardService service;
+
+    @GetMapping("/resumen-general")
+    @Operation(
+        summary = "Conteos globales para tarjetas del dashboard",
+        description = "Devuelve 4 COUNT reales de BD: clientes activos, mascotas activas, médicos disponibles y citas de hoy. Nunca tamaños de página."
+    )
+    @ApiResponse(responseCode = "200", description = "Resumen obtenido")
+    @PreAuthorize("hasAnyRole('ADMIN','RECEPCIONISTA')")
+    public ResponseEntity<ResumenGeneralDTO> resumenGeneral() {
+        return ResponseEntity.ok(service.obtenerResumenGeneral());
+    }
 
     @GetMapping
     @Operation(

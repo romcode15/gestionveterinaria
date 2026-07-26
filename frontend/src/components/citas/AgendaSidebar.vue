@@ -38,7 +38,6 @@ function formatFecha(fecha: string): string {
       <!-- Usar EmptyState -->
       <EmptyState
         v-if="props.citas.length === 0"
-        icon="📅"
         title="Sin citas"
         message="No hay citas programadas para este día"
       />

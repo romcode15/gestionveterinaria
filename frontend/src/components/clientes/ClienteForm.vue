@@ -189,10 +189,15 @@ function handleSubmit() {
         </span>
       </div>
     </div>
-    <div v-else-if="!props.cliente" class="p-3 rounded-lg text-sm"
+    <div v-else-if="!props.cliente" class="p-3 rounded-lg text-sm flex items-start gap-2"
       style="background: rgba(16,185,129,0.08); color: var(--text-secondary); border: 1px solid rgba(16,185,129,0.2)">
-      ✅ Al registrar, se creará usuario de acceso automáticamente.<br>
-      <strong>Usuario y contraseña inicial:</strong> número de documento
+      <svg class="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <span>
+        Al registrar, se creará usuario de acceso automáticamente.<br>
+        <strong>Usuario y contraseña inicial:</strong> número de documento
+      </span>
     </div>
 
     <FormActions

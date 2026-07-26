@@ -1,51 +1,41 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import type { UsuarioFormData } from '@/types'
 import { usuariosService, type UsuarioListItem } from '@/services/usuarios.service'
 
 export const useUsuariosStore = defineStore('usuarios', () => {
   // ── Estado ─────────────────────────────────────────────────────────────
 
-  const usuarios    = ref<UsuarioListItem[]>([])
-  const loading     = ref(false)
-  const error       = ref<string | null>(null)
+  const usuarios      = ref<UsuarioListItem[]>([])
+  const loading       = ref(false)
+  const error         = ref<string | null>(null)
 
-  // Filtros (locales, sin paginación porque la API devuelve lista simple)
-  const searchQuery  = ref('')
-  const filtroRol    = ref<string>('todos')
+  // Paginación
+  const page          = ref(0)
+  const pageSize      = ref(15)
+  const totalElements = ref(0)
+  const totalPages    = ref(0)
 
-  // ── Computed ────────────────────────────────────────────────────────────
-
-  const usuariosFiltrados = computed(() => {
-    let lista = usuarios.value
-
-    if (filtroRol.value !== 'todos') {
-      lista = lista.filter((u) =>
-        u.rolesNombres.some((r) => r.toLowerCase() === filtroRol.value),
-      )
-    }
-
-    if (searchQuery.value.trim()) {
-      const q = searchQuery.value.trim().toLowerCase()
-      lista = lista.filter(
-        (u) =>
-          u.nombre.toLowerCase().includes(q) ||
-          u.apellido.toLowerCase().includes(q) ||
-          u.username.toLowerCase().includes(q) ||
-          u.email.toLowerCase().includes(q),
-      )
-    }
-
-    return lista
-  })
+  // Filtros — cualquier cambio dispara cargar({ page: 0 })
+  const searchQuery   = ref('')
+  const filtroRol     = ref<string>('todos')
 
   // ── Acciones ────────────────────────────────────────────────────────────
 
-  async function cargar(): Promise<void> {
+  async function cargar(params: { page?: number } = {}): Promise<void> {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
-      usuarios.value = await usuariosService.getAll()
+      const res = await usuariosService.getAll({
+        page:     params.page ?? page.value,
+        size:     pageSize.value,
+        busqueda: searchQuery.value.trim() || undefined,
+        rol:      filtroRol.value !== 'todos' ? filtroRol.value : undefined,
+      })
+      usuarios.value      = res.content
+      page.value          = res.number
+      totalElements.value = res.totalElements
+      totalPages.value    = res.totalPages
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Error al cargar usuarios'
     } finally {
@@ -53,12 +43,16 @@ export const useUsuariosStore = defineStore('usuarios', () => {
     }
   }
 
+  async function irAPagina(numeroPagina: number): Promise<void> {
+    await cargar({ page: numeroPagina })
+  }
+
   async function crear(data: UsuarioFormData): Promise<UsuarioListItem> {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
       const nuevo = await usuariosService.create(data)
-      usuarios.value.push(nuevo)
+      await cargar({ page: 0 })
       return nuevo
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Error al crear usuario'
@@ -70,7 +64,7 @@ export const useUsuariosStore = defineStore('usuarios', () => {
 
   async function actualizar(id: number, data: Partial<UsuarioFormData>): Promise<void> {
     loading.value = true
-    error.value = null
+    error.value   = null
     try {
       const actualizado = await usuariosService.update(id, data)
       const idx = usuarios.value.findIndex((u) => u.id === id)
@@ -85,7 +79,11 @@ export const useUsuariosStore = defineStore('usuarios', () => {
 
   async function eliminar(id: number): Promise<void> {
     await usuariosService.delete(id)
-    usuarios.value = usuarios.value.filter((u) => u.id !== id)
+    // Si borramos el último de la página actual, volver a página anterior
+    const paginaDestino = usuarios.value.length === 1 && page.value > 0
+      ? page.value - 1
+      : page.value
+    await cargar({ page: paginaDestino })
   }
 
   function limpiarError(): void {
@@ -96,10 +94,14 @@ export const useUsuariosStore = defineStore('usuarios', () => {
     usuarios,
     loading,
     error,
+    page,
+    pageSize,
+    totalElements,
+    totalPages,
     searchQuery,
     filtroRol,
-    usuariosFiltrados,
     cargar,
+    irAPagina,
     crear,
     actualizar,
     eliminar,
