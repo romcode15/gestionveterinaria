@@ -29,18 +29,21 @@ public class MascotaController {
     private MascotaService mascotaService;
 
     @GetMapping
-    @Operation(summary = "Listar mascotas paginadas",
-               description = "Parámetros: page (0-based), size (default 20), sort (campo,asc|desc)")
+    @Operation(summary = "Listar mascotas con filtros combinados opcionales",
+               description = "busqueda (nombre/propietario), especieId y estado se pueden combinar simultáneamente.")
     @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
     public ResponseEntity<Page<MascotaDTO>> listarTodas(
-            @RequestParam(defaultValue = "0")        int page,
-            @RequestParam(defaultValue = "20")       int size,
-            @RequestParam(defaultValue = "nombre")   String sort,
-            @RequestParam(defaultValue = "asc")      String dir) {
+            @Parameter(description = "Texto en nombre o propietario") @RequestParam(required = false) String busqueda,
+            @Parameter(description = "ID de especie")                 @RequestParam(required = false) Integer especieId,
+            @Parameter(description = "Estado: activo|fallecido|transferido") @RequestParam(required = false) String estado,
+            @RequestParam(defaultValue = "0")      int page,
+            @RequestParam(defaultValue = "10")     int size,
+            @RequestParam(defaultValue = "nombre") String sort,
+            @RequestParam(defaultValue = "asc")    String dir) {
 
         Pageable pageable = PageRequest.of(page, size,
                 dir.equalsIgnoreCase("desc") ? Sort.by(sort).descending() : Sort.by(sort).ascending());
-        return ResponseEntity.ok(mascotaService.listarTodas(pageable));
+        return ResponseEntity.ok(mascotaService.buscarConFiltros(busqueda, especieId, estado, pageable));
     }
 
     @GetMapping("/{id}")

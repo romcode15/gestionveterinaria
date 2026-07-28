@@ -12,7 +12,6 @@ import StatusBadge from '@/components/common/StatusBadge.vue'
 import EntitySummary from '@/components/common/EntitySummary.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
-
 import { useAuthStore } from '@/stores/auth.store'
 import { useCitasStore } from '@/stores/citas.store'
 import { api } from '@/services/api'
@@ -141,58 +140,50 @@ function labelSiguienteEstado(estado: EstadoCita): string {
       />
     </template>
 
-    <div class="space-y-4">
-      <AppAlert v-if="citasStore.error" type="error" dismissible @dismiss="citasStore.limpiarError()">
+    <!-- Contenedor principal flex-column ocupando todo el espacio -->
+    <div class="flex flex-col h-full gap-4 p-6 min-h-0">
+
+      <AppAlert v-if="citasStore.error" type="error" dismissible class="shrink-0" @dismiss="citasStore.limpiarError()">
         {{ citasStore.error }}
       </AppAlert>
 
-      <!-- Navegación de fecha -->
-      <AppCard padding="sm">
+      <!-- Navegación de fecha — fija -->
+      <AppCard padding="sm" class="shrink-0">
         <div class="flex items-center justify-between gap-4">
           <AppButton variant="ghost" size="sm" aria-label="Día anterior" @click="cambiarFecha(-1)">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
           </AppButton>
-
           <div class="text-center">
             <p class="font-semibold capitalize" style="color: var(--text-primary)">{{ fechaLabel }}</p>
             <p class="text-xs" style="color: var(--text-muted)">{{ fechaSeleccionada }}</p>
           </div>
-
           <AppButton variant="ghost" size="sm" aria-label="Día siguiente" @click="cambiarFecha(1)">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
           </AppButton>
-
-          <AppButton
-            v-if="fechaSeleccionada !== fechaHoy"
-            size="sm"
-            class="ml-auto"
-            @click="() => { fechaSeleccionada = fechaHoy; cargarAgenda() }"
-          >
+          <AppButton v-if="fechaSeleccionada !== fechaHoy" size="sm" class="ml-auto"
+            @click="() => { fechaSeleccionada = fechaHoy; cargarAgenda() }">
             Hoy
           </AppButton>
         </div>
       </AppCard>
 
-      <!-- Stats del día -->
-      <EntitySummary :items="stats" />
+      <!-- Stats — fijas -->
+      <EntitySummary :items="stats" class="shrink-0" />
 
-      <!-- Lista de citas del día -->
-      <AppCard padding="none">
-        <div class="px-6 py-4 border-b" style="border-color: var(--border-default)">
-          <h2 class="font-semibold" style="color: var(--text-primary)">Citas del día</h2>
-        </div>
+      <!-- Lista de citas — ocupa el resto con scroll interno -->
+      <AppCard fill-height padding="none">
+        <template #header>
+          <div class="px-6 py-4 border-b shrink-0" style="border-color: var(--border-default)">
+            <h2 class="font-semibold" style="color: var(--text-primary)">Citas del día</h2>
+          </div>
+        </template>
 
         <LoadingState v-if="loading">Cargando agenda...</LoadingState>
-
-        <EmptyState
-          v-else-if="citasStore.citas.length === 0"
-          title="Sin citas"
-          message="No tienes citas para este día"
-        />
+        <EmptyState v-else-if="citasStore.citas.length === 0" title="Sin citas" message="No tienes citas para este día" />
 
         <div v-else class="divide-y" style="border-color: var(--border-default)">
           <div
@@ -201,19 +192,12 @@ function labelSiguienteEstado(estado: EstadoCita): string {
             class="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-4 transition-colors"
             :class="cita.estado === 'en_curso' ? 'bg-[rgba(5,150,105,0.05)]' : 'hover:bg-(--bg-surface-2)'"
           >
-            <!-- Hora -->
             <div class="text-center shrink-0 w-16">
               <p class="text-sm font-bold" style="color: var(--text-primary)">{{ cita.horaInicio }}</p>
               <p class="text-xs" style="color: var(--text-muted)">{{ cita.horaFin }}</p>
             </div>
-
-            <!-- Barra de color tipo cita -->
-            <div
-              class="w-1 h-12 rounded-full shrink-0 hidden sm:block"
-              :style="{ backgroundColor: cita.tipoCita?.color ?? '#059669' }"
-            />
-
-            <!-- Info cita -->
+            <div class="w-1 h-12 rounded-full shrink-0 hidden sm:block"
+              :style="{ backgroundColor: cita.tipoCita?.color ?? '#059669' }" />
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <p class="font-semibold" style="color: var(--text-primary)">{{ cita.mascotaNombre }}</p>
@@ -223,42 +207,28 @@ function labelSiguienteEstado(estado: EstadoCita): string {
                 {{ cita.clienteNombre }} · {{ cita.motivo }}
               </p>
             </div>
-
-            <!-- Estado + acciones -->
             <div class="flex items-center gap-2 shrink-0 flex-wrap">
               <StatusBadge :status="cita.estado" />
-
-              <AppButton
-                v-if="siguienteEstado(cita.estado)"
-                variant="ghost"
-                size="sm"
+              <AppButton v-if="siguienteEstado(cita.estado)" variant="ghost" size="sm"
                 :loading="cambiandoEstado === cita.id"
-                @click="cambiarEstado(cita, siguienteEstado(cita.estado)!)"
-              >
+                @click="cambiarEstado(cita, siguienteEstado(cita.estado)!)">
                 {{ labelSiguienteEstado(cita.estado) }}
               </AppButton>
-
-              <AppButton
-                v-if="cita.estado === 'en_curso' || cita.estado === 'completada'"
-                size="sm"
-                @click="router.push(`/diagnosticos?citaId=${cita.id}`)"
-              >
+              <AppButton v-if="cita.estado === 'en_curso' || cita.estado === 'completada'" size="sm"
+                @click="router.push(`/diagnosticos?citaId=${cita.id}`)">
                 Diagnóstico
               </AppButton>
             </div>
           </div>
         </div>
-      </AppCard>
 
-      <!-- Acceso rápido -->
-      <AppCard padding="sm">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="font-medium" style="color: var(--text-primary)">Mis diagnósticos registrados</p>
-            <p class="text-xs mt-0.5" style="color: var(--text-muted)">Historial de consultas atendidas</p>
+        <template #footer>
+          <div class="border-t px-6 py-3" style="border-color: var(--border-default)">
+            <AppButton variant="ghost" @click="router.push('/mis-diagnosticos')">
+              Ver mis diagnósticos
+            </AppButton>
           </div>
-          <AppButton variant="ghost" @click="router.push('/mis-diagnosticos')">Ver todos</AppButton>
-        </div>
+        </template>
       </AppCard>
     </div>
   </DashboardLayout>

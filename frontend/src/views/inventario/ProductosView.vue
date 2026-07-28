@@ -16,6 +16,8 @@ import SearchToolbar from '@/components/common/SearchToolbar.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
 import FormActions from '@/components/forms/FormActions.vue'
+import TableViewLayout from '@/components/common/TableViewLayout.vue'
+import { useFiltros } from '@/composables/useFiltros'
 import { api } from '@/services/api'
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
@@ -75,7 +77,6 @@ const totalPages = ref(0)
 const totalElements = ref(0)
 const pageSize = ref(20)
 
-const searchQuery = ref('')
 const filtroCategoria = ref<number | null>(null)
 
 // Modal producto
@@ -162,7 +163,7 @@ async function cargarProductos(p = 0) {
   error.value = null
   try {
     const params: any = { page: p, size: pageSize.value, sort: 'nombre', dir: 'asc' }
-    if (searchQuery.value) params.search = searchQuery.value
+    if (busqueda.value) params.search = busqueda.value
     if (filtroCategoria.value) params.categoriaId = filtroCategoria.value
 
     const res = await api.getPaged<Producto>('/api/inventario/productos', params)
@@ -203,9 +204,9 @@ async function cargarLotes(productoId: number) {
 
 onMounted(cargarDatos)
 
-watch([searchQuery, filtroCategoria], () => {
-  cargarProductos(0)
-})
+// busqueda con debounce 400ms; filtroCategoria (select) inmediato
+const { busqueda } = useFiltros({ onCargar: () => cargarProductos(0) })
+watch(filtroCategoria, () => cargarProductos(0))
 
 // ── CRUD Producto ──────────────────────────────────────────────────────────
 
@@ -398,164 +399,120 @@ function stockBajo(stock: number, minimo: number): boolean {
       <PageHeader title="Productos" subtitle="Gestión de inventario" />
     </template>
 
-    <div class="space-y-4">
-      <Transition name="fade">
-        <AppAlert v-if="error" type="error" dismissible @dismiss="error = null">{{ error }}</AppAlert>
-      </Transition>
-      <Transition name="fade">
-        <AppAlert v-if="successMsg" type="success" dismissible @dismiss="successMsg = ''">{{ successMsg }}</AppAlert>
-      </Transition>
+    <TableViewLayout>
+      <template #toolbar>
+        <Transition name="fade">
+          <AppAlert v-if="error" type="error" dismissible @dismiss="error = null">{{ error }}</AppAlert>
+        </Transition>
+        <Transition name="fade">
+          <AppAlert v-if="successMsg" type="success" dismissible @dismiss="successMsg = ''">{{ successMsg }}</AppAlert>
+        </Transition>
+        <SearchToolbar v-model:search="busqueda" search-placeholder="Buscar por nombre, código..."
+          :show-new-button="true" new-button-label="Nuevo producto" @new="abrirCrearProducto">
+          <template #filters>
+            <AppSelect v-model="filtroCategoria" :options="categoriaFiltroOptions" class="w-full sm:w-48" />
+          </template>
+        </SearchToolbar>
+      </template>
 
-      <SearchToolbar
-        v-model:search="searchQuery"
-        search-placeholder="Buscar por nombre, código..."
-        :show-new-button="true"
-        new-button-label="Nuevo producto"
-        @new="abrirCrearProducto"
-      >
-        <template #filters>
-          <AppSelect
-            v-model="filtroCategoria"
-            :options="categoriaFiltroOptions"
-            class="w-full sm:w-48"
-          />
-        </template>
-      </SearchToolbar>
-
-      <!-- Lista de productos -->
-      <AppCard padding="none">
-        <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--border-color)">
-          <h2 class="font-semibold" style="color: var(--text-primary)">
-            {{ totalElements }} producto(s)
-          </h2>
-        </div>
-
-        <div v-if="loading" class="p-4">
-          <LoadingState>Cargando productos...</LoadingState>
-        </div>
-
-        <EmptyState
-          v-else-if="productos.length === 0"
-          title="Sin productos"
-          message="No hay productos registrados en el inventario"
-        />
-
-        <div v-else class="divide-y" style="border-color: var(--border-color)">
-          <div
-            v-for="p in productos"
-            :key="p.id"
-            class="px-6 py-4 hover:bg-(--bg-surface-2) transition-colors"
-          >
-            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="font-semibold" style="color: var(--text-primary)">{{ p.nombre }}</span>
-                  <AppBadge :variant="p.activo ? 'success' : 'neutral'" size="sm">
-                    {{ p.activo ? 'Activo' : 'Inactivo' }}
-                  </AppBadge>
-                  <AppBadge v-if="p.requiereReceta" variant="warning" size="sm">
-                    Receta médica
-                  </AppBadge>
-                </div>
-                <p class="text-sm" style="color: var(--text-secondary)">
-                  {{ p.categoria }} · {{ p.unidadMedida }}
-                  <span v-if="p.codigo">· Código: {{ p.codigo }}</span>
-                  <span v-if="p.proveedorNombre">· Prov: {{ p.proveedorNombre }}</span>
-                </p>
-                <div class="flex gap-4 mt-1 text-sm">
-                  <span style="color: var(--text-primary)">{{ formatMoneda(p.precio) }}</span>
-                  <span
-                    :class="stockBajo(p.stockActual, p.stockMinimo) ? 'text-danger-500 font-semibold' : ''"
-                    style="color: var(--text-muted)"
-                  >
-                    Stock: {{ p.stockActual }} / Min: {{ p.stockMinimo }}
-                    <svg v-if="stockBajo(p.stockActual, p.stockMinimo)"
-                      class="w-3.5 h-3.5 inline text-yellow-500 ml-0.5" fill="none"
-                      stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                    </svg>
-                  </span>
-                </div>
-              </div>
-              <div class="flex gap-2 shrink-0 flex-wrap">
-                <AppButton size="sm" variant="ghost" @click="verLotes(p)">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                  </svg>
-                  Lotes
-                </AppButton>
-                <AppButton size="sm" variant="ghost" @click="abrirEditarProducto(p)">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                </AppButton>
-              </div>
+      <template #content>
+        <AppCard fill-height padding="none">
+          <template #header>
+            <div class="px-6 py-4 border-b shrink-0" style="border-color: var(--border-color)">
+              <h2 class="font-semibold" style="color: var(--text-primary)">{{ totalElements }} producto(s)</h2>
             </div>
+          </template>
 
-            <!-- Lotes expandidos -->
-            <div v-if="mostrarLotes && productoSeleccionado?.id === p.id" class="mt-4 pt-4 border-t" style="border-color: var(--border-color)">
-              <div class="flex items-center justify-between mb-3">
-                <h4 class="font-medium text-sm" style="color: var(--text-primary)">Lotes</h4>
-                <AppButton size="sm" @click="abrirRegistrarLote(p)">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                  </svg>
-                  Registrar entrada
-                </AppButton>
-              </div>
-              <div v-if="lotes.length === 0" style="color: var(--text-muted)" class="text-sm">
-                Sin lotes registrados
-              </div>
-              <div v-else class="space-y-2">
-                <div
-                  v-for="l in lotes"
-                  :key="l.id"
-                  class="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-lg text-sm"
-                  style="background-color: var(--bg-surface-2)"
-                >
-                  <div>
-                    <span class="font-medium" style="color: var(--text-primary)">Lote {{ l.numeroLote }}</span>
-                    <span class="ml-2" style="color: var(--text-muted)">{{ l.proveedorNombre }}</span>
+          <div v-if="loading" class="p-4"><LoadingState>Cargando productos...</LoadingState></div>
+          <EmptyState v-else-if="productos.length === 0" title="Sin productos" message="No hay productos registrados en el inventario" />
+
+          <div v-else class="divide-y" style="border-color: var(--border-color)">
+            <div v-for="p in productos" :key="p.id" class="px-6 py-4 hover:bg-(--bg-surface-2) transition-colors">
+              <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-semibold" style="color: var(--text-primary)">{{ p.nombre }}</span>
+                    <AppBadge :variant="p.activo ? 'success' : 'neutral'" size="sm">{{ p.activo ? 'Activo' : 'Inactivo' }}</AppBadge>
+                    <AppBadge v-if="p.requiereReceta" variant="warning" size="sm">Receta médica</AppBadge>
                   </div>
-                  <div class="flex items-center gap-3">
-                    <span style="color: var(--text-secondary)">Stock: {{ l.cantidadActual }}</span>
-                    <AppBadge :variant="l.estado === 'activo' ? 'success' : l.estado === 'agotado' ? 'neutral' : 'danger'" size="sm">
-                      {{ l.estado }}
-                    </AppBadge>
-                    <span style="color: var(--text-muted)">Vence: {{ formatFecha(l.fechaVencimiento) }}</span>
-                    <AppButton
-                      v-if="l.estado === 'activo' && l.cantidadActual > 0"
-                      size="sm"
-                      variant="ghost"
-                      @click="abrirRegistrarSalida(l)"
-                    >
-                      Salida
-                    </AppButton>
+                  <p class="text-sm" style="color: var(--text-secondary)">
+                    {{ p.categoria }} · {{ p.unidadMedida }}
+                    <span v-if="p.codigo">· Código: {{ p.codigo }}</span>
+                    <span v-if="p.proveedorNombre">· Prov: {{ p.proveedorNombre }}</span>
+                  </p>
+                  <div class="flex gap-4 mt-1 text-sm">
+                    <span style="color: var(--text-primary)">{{ formatMoneda(p.precio) }}</span>
+                    <span :class="stockBajo(p.stockActual, p.stockMinimo) ? 'text-danger-500 font-semibold' : ''" style="color: var(--text-muted)">
+                      Stock: {{ p.stockActual }} / Min: {{ p.stockMinimo }}
+                      <svg v-if="stockBajo(p.stockActual, p.stockMinimo)" class="w-3.5 h-3.5 inline text-yellow-500 ml-0.5"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                      </svg>
+                    </span>
                   </div>
                 </div>
+                <div class="flex gap-2 shrink-0 flex-wrap">
+                  <AppButton size="sm" variant="ghost" @click="verLotes(p)">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                    Lotes
+                  </AppButton>
+                  <AppButton size="sm" variant="ghost" @click="abrirEditarProducto(p)">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </AppButton>
+                </div>
               </div>
-              <AppButton size="sm" variant="ghost" class="mt-2" @click="cerrarLotes">
-                Ocultar lotes
-              </AppButton>
+
+              <!-- Lotes expandidos inline -->
+              <div v-if="mostrarLotes && productoSeleccionado?.id === p.id" class="mt-4 pt-4 border-t" style="border-color: var(--border-color)">
+                <div class="flex items-center justify-between mb-3">
+                  <h4 class="font-medium text-sm" style="color: var(--text-primary)">Lotes</h4>
+                  <AppButton size="sm" @click="abrirRegistrarLote(p)">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Registrar entrada
+                  </AppButton>
+                </div>
+                <div v-if="lotes.length === 0" style="color: var(--text-muted)" class="text-sm">Sin lotes registrados</div>
+                <div v-else class="space-y-2">
+                  <div v-for="l in lotes" :key="l.id"
+                    class="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-lg text-sm"
+                    style="background-color: var(--bg-surface-2)">
+                    <div>
+                      <span class="font-medium" style="color: var(--text-primary)">Lote {{ l.numeroLote }}</span>
+                      <span class="ml-2" style="color: var(--text-muted)">{{ l.proveedorNombre }}</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <span style="color: var(--text-secondary)">Stock: {{ l.cantidadActual }}</span>
+                      <AppBadge :variant="l.estado === 'activo' ? 'success' : l.estado === 'agotado' ? 'neutral' : 'danger'" size="sm">{{ l.estado }}</AppBadge>
+                      <span style="color: var(--text-muted)">Vence: {{ formatFecha(l.fechaVencimiento) }}</span>
+                      <AppButton v-if="l.estado === 'activo' && l.cantidadActual > 0" size="sm" variant="ghost" @click="abrirRegistrarSalida(l)">
+                        Salida
+                      </AppButton>
+                    </div>
+                  </div>
+                </div>
+                <AppButton size="sm" variant="ghost" class="mt-2" @click="cerrarLotes">Ocultar lotes</AppButton>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="px-4 border-t" style="border-color: var(--border-color)">
-          <AppPagination
-            :page="page"
-            :total-pages="totalPages"
-            :total-elements="totalElements"
-            :page-size="pageSize"
-            :loading="loading"
-            @change="cargarProductos"
-          />
-        </div>
-      </AppCard>
-    </div>
+          <template #footer>
+            <div class="border-t" style="border-color: var(--border-color)">
+              <AppPagination :page="page" :total-pages="totalPages" :total-elements="totalElements"
+                :page-size="pageSize" :loading="loading" @change="cargarProductos" />
+            </div>
+          </template>
+        </AppCard>
+      </template>
+    </TableViewLayout>
 
     <!-- Modal Producto -->
     <AppModal v-model="showModalProducto" :title="editandoProducto ? 'Editar producto' : 'Nuevo producto'" size="lg">

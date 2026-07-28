@@ -63,7 +63,7 @@ export const useMascotasStore = defineStore('mascotas', () => {
 
       let res
       if (medicoId.value) {
-        // Veterinario: solo sus mascotas via portal médico
+        // Veterinario: portal médico (solo búsqueda de texto)
         const portalParams: PageParams = { ...p }
         if (searchQuery.value.trim()) portalParams.busqueda = searchQuery.value.trim()
         try {
@@ -80,9 +80,12 @@ export const useMascotasStore = defineStore('mascotas', () => {
           mascotas.value = []; totalElements.value = 0; totalPages.value = 0; loading.value = false; return
         }
       } else {
-        res = searchQuery.value.trim()
-          ? await mascotasService.buscar(searchQuery.value.trim(), p)
-          : await mascotasService.getAll(p)
+        // Admin / recepcionista: endpoint combinado — todos los filtros simultáneos
+        res = await mascotasService.getAll({
+          ...p,
+          busqueda:  searchQuery.value.trim()  || undefined,
+          especieId: filtroEspecieId.value     ?? undefined,
+        })
       }
 
       mascotas.value      = res.content

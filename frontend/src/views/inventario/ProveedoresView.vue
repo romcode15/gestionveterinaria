@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppModal from '@/components/ui/AppModal.vue'
@@ -13,6 +13,8 @@ import SearchToolbar from '@/components/common/SearchToolbar.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
 import FormActions from '@/components/forms/FormActions.vue'
+import TableViewLayout from '@/components/common/TableViewLayout.vue'
+import { useFiltros } from '@/composables/useFiltros'
 import { api } from '@/services/api'
 
 interface Proveedor {
@@ -30,7 +32,7 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const successMsg = ref('')
 const proveedores = ref<Proveedor[]>([])
-const searchQuery = ref('')
+const { busqueda } = useFiltros({ onCargar: (page) => cargarProveedores(page) })
 const page = ref(0)
 const totalPages = ref(0)
 const totalElements = ref(0)
@@ -55,7 +57,7 @@ async function cargarProveedores(p = 0) {
   error.value = null
   try {
     const params: Record<string, unknown> = { page: p, size: pageSize.value, sort: 'nombre', dir: 'asc' }
-    if (searchQuery.value) params.search = searchQuery.value
+    if (busqueda.value) params.search = busqueda.value
 
     const res = await api.getPaged<Proveedor>('/api/inventario/proveedores', params)
     proveedores.value = res.content
@@ -70,8 +72,6 @@ async function cargarProveedores(p = 0) {
 }
 
 onMounted(() => cargarProveedores())
-
-watch(searchQuery, () => cargarProveedores(0))
 
 function resetForm() {
   form.value = { nombre: '', ruc: '', contacto: '', telefono: '', email: '', direccion: '' }
@@ -153,93 +153,71 @@ async function toggleEstado(proveedor: Proveedor) {
       <PageHeader title="Proveedores" subtitle="Gestión de proveedores" />
     </template>
 
-    <div class="space-y-4">
-      <Transition name="fade">
-        <AppAlert v-if="error" type="error" dismissible @dismiss="error = null">{{ error }}</AppAlert>
-      </Transition>
-      <Transition name="fade">
-        <AppAlert v-if="successMsg" type="success" dismissible @dismiss="successMsg = ''">{{ successMsg }}</AppAlert>
-      </Transition>
+    <TableViewLayout>
+      <template #toolbar>
+        <Transition name="fade">
+          <AppAlert v-if="error" type="error" dismissible @dismiss="error = null">{{ error }}</AppAlert>
+        </Transition>
+        <Transition name="fade">
+          <AppAlert v-if="successMsg" type="success" dismissible @dismiss="successMsg = ''">{{ successMsg }}</AppAlert>
+        </Transition>
+        <SearchToolbar v-model:search="busqueda" search-placeholder="Buscar por nombre, RUC, contacto..."
+          :show-new-button="true" new-button-label="Nuevo proveedor" @new="abrirCrear" />
+      </template>
 
-      <SearchToolbar
-        v-model:search="searchQuery"
-        search-placeholder="Buscar por nombre, RUC, contacto..."
-        :show-new-button="true"
-        new-button-label="Nuevo proveedor"
-        @new="abrirCrear"
-      />
-
-      <AppCard padding="none">
-        <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--border-color)">
-          <h2 class="font-semibold" style="color: var(--text-primary)">
-            {{ totalElements }} proveedor(es)
-          </h2>
-        </div>
-
-        <div v-if="loading" class="p-4">
-          <LoadingState>Cargando proveedores...</LoadingState>
-        </div>
-
-        <EmptyState
-          v-else-if="proveedores.length === 0"
-          icon="🏢"
-          title="Sin proveedores"
-          message="No hay proveedores registrados"
-        />
-
-        <div v-else class="divide-y" style="border-color: var(--border-color)">
-          <div
-            v-for="p in proveedores"
-            :key="p.id"
-            class="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3"
-          >
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="font-semibold" style="color: var(--text-primary)">{{ p.nombre }}</span>
-                <AppBadge :variant="p.activo ? 'success' : 'neutral'" size="sm">
-                  {{ p.activo ? 'Activo' : 'Inactivo' }}
-                </AppBadge>
-              </div>
-              <div class="text-sm" style="color: var(--text-secondary)">
-                <span>RUC: {{ p.ruc }}</span>
-                <span v-if="p.contacto" class="ml-3">Contacto: {{ p.contacto }}</span>
-              </div>
-              <div class="text-xs" style="color: var(--text-muted)">
-                <span v-if="p.telefono">{{ p.telefono }}</span>
-                <span v-if="p.email" class="ml-3">{{ p.email }}</span>
-                <span v-if="p.direccion" class="ml-3">{{ p.direccion }}</span>
-              </div>
+      <template #content>
+        <AppCard fill-height padding="none">
+          <template #header>
+            <div class="px-6 py-4 border-b shrink-0" style="border-color: var(--border-color)">
+              <h2 class="font-semibold" style="color: var(--text-primary)">{{ totalElements }} proveedor(es)</h2>
             </div>
-            <div class="flex gap-2 shrink-0">
-              <AppButton size="sm" variant="ghost" @click="abrirEditar(p)">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </AppButton>
-              <AppButton
-                size="sm"
-                :variant="p.activo ? 'danger' : 'ghost'"
-                @click="toggleEstado(p)"
-              >
-                {{ p.activo ? 'Desactivar' : 'Activar' }}
-              </AppButton>
+          </template>
+
+          <div v-if="loading" class="p-4"><LoadingState>Cargando proveedores...</LoadingState></div>
+          <EmptyState v-else-if="proveedores.length === 0" title="Sin proveedores" message="No hay proveedores registrados" />
+
+          <div v-else class="divide-y" style="border-color: var(--border-color)">
+            <div v-for="p in proveedores" :key="p.id" class="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-semibold" style="color: var(--text-primary)">{{ p.nombre }}</span>
+                  <AppBadge :variant="p.activo ? 'success' : 'neutral'" size="sm">
+                    {{ p.activo ? 'Activo' : 'Inactivo' }}
+                  </AppBadge>
+                </div>
+                <div class="text-sm" style="color: var(--text-secondary)">
+                  <span>RUC: {{ p.ruc }}</span>
+                  <span v-if="p.contacto" class="ml-3">Contacto: {{ p.contacto }}</span>
+                </div>
+                <div class="text-xs" style="color: var(--text-muted)">
+                  <span v-if="p.telefono">{{ p.telefono }}</span>
+                  <span v-if="p.email" class="ml-3">{{ p.email }}</span>
+                  <span v-if="p.direccion" class="ml-3">{{ p.direccion }}</span>
+                </div>
+              </div>
+              <div class="flex gap-2 shrink-0">
+                <AppButton size="sm" variant="ghost" @click="abrirEditar(p)">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </AppButton>
+                <AppButton size="sm" :variant="p.activo ? 'danger' : 'ghost'" @click="toggleEstado(p)">
+                  {{ p.activo ? 'Desactivar' : 'Activar' }}
+                </AppButton>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="px-4 border-t" style="border-color: var(--border-color)">
-          <AppPagination
-            :page="page"
-            :total-pages="totalPages"
-            :total-elements="totalElements"
-            :page-size="pageSize"
-            :loading="loading"
-            @change="cargarProveedores"
-          />
-        </div>
-      </AppCard>
-    </div>
+          <template #footer>
+            <div class="border-t" style="border-color: var(--border-color)">
+              <AppPagination :page="page" :total-pages="totalPages" :total-elements="totalElements"
+                :page-size="pageSize" :loading="loading" @change="cargarProveedores" />
+            </div>
+          </template>
+        </AppCard>
+      </template>
+    </TableViewLayout>
 
     <AppModal v-model="showModal" :title="editando ? 'Editar proveedor' : 'Nuevo proveedor'" size="md">
       <form @submit.prevent="guardar" class="space-y-4">

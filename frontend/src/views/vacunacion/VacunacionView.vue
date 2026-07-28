@@ -14,6 +14,9 @@ import SearchToolbar from '@/components/common/SearchToolbar.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
 import FormActions from '@/components/forms/FormActions.vue'
+import TableViewLayout from '@/components/common/TableViewLayout.vue'
+import { ESTADO_VACUNA_OPTIONS } from '@/constants/filterOptions'
+import { useFiltros } from '@/composables/useFiltros'
 import { api } from '@/services/api'
 import { useAuthStore } from '@/stores/auth.store'
 
@@ -64,7 +67,6 @@ const pageSize = ref(20)
 
 // Filtros
 const filtroEstado = ref<string>('todos')
-const searchQuery = ref('')
 
 // Alertas
 const alertas = ref<{ proximas: number; vencidas: number }>({ proximas: 0, vencidas: 0 })
@@ -89,11 +91,7 @@ const form = ref({
 
 // ── Computed ─────────────────────────────────────────────────────────────────
 
-const estadoOptions = [
-  { value: 'todos', label: 'Todos los estados' },
-  { value: 'vigente', label: 'Vigentes' },
-  { value: 'vencida', label: 'Vencidas' },
-]
+const estadoOptions = ESTADO_VACUNA_OPTIONS
 
 const vacunaOptions = computed(() =>
   catalogoVacunas.value
@@ -131,7 +129,7 @@ async function cargarRegistros(p = 0) {
   try {
     const params: Record<string, unknown> = { page: p, size: pageSize.value, sort: 'fechaAplicacion', dir: 'desc' }
     if (filtroEstado.value !== 'todos') params.estado = filtroEstado.value
-    if (searchQuery.value) params.search = searchQuery.value
+    if (busqueda.value) params.search = busqueda.value
     // Si es veterinario, filtrar solo sus registros
     if (esMedico && authStore.medicoId) params.medicoId = authStore.medicoId
 
@@ -173,9 +171,9 @@ async function cargarAlertas() {
 
 onMounted(cargarDatos)
 
-watch([searchQuery, filtroEstado], () => {
-  cargarRegistros(0)
-})
+// busqueda con debounce 400ms, filtroEstado inmediato
+const { busqueda } = useFiltros({ onCargar: () => cargarRegistros(0) })
+watch(filtroEstado, () => cargarRegistros(0))
 
 // ── Guardar registro ───────────────────────────────────────────────────────
 
@@ -250,122 +248,94 @@ function formatFecha(f: string) {
       <PageHeader title="Vacunación" subtitle="Registro de vacunas aplicadas" />
     </template>
 
-    <div class="space-y-4">
-      <Transition name="fade">
-        <AppAlert v-if="error" type="error" dismissible @dismiss="error = null">{{ error }}</AppAlert>
-      </Transition>
-      <Transition name="fade">
-        <AppAlert v-if="successMsg" type="success" dismissible @dismiss="successMsg = ''">{{ successMsg }}</AppAlert>
-      </Transition>
+    <TableViewLayout>
+      <template #toolbar>
+        <Transition name="fade">
+          <AppAlert v-if="error" type="error" dismissible @dismiss="error = null">{{ error }}</AppAlert>
+        </Transition>
+        <Transition name="fade">
+          <AppAlert v-if="successMsg" type="success" dismissible @dismiss="successMsg = ''">{{ successMsg }}</AppAlert>
+        </Transition>
 
-      <!-- Alertas -->
-      <div v-if="alertas.proximas > 0 || alertas.vencidas > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <AppCard v-if="alertas.proximas > 0" padding="sm" class="border-l-4" style="border-color: var(--color-warning)">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <svg class="w-4 h-4 shrink-0 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-              </svg>
-              <p class="text-sm font-medium" style="color: var(--text-primary)">
-                {{ alertas.proximas }} vacuna(s) próxima(s) a vencer (30 días)
-              </p>
-            </div>
-            <AppButton size="sm" variant="ghost" @click="filtroEstado = 'vigente'; searchQuery = ''">
-              Ver listado
-            </AppButton>
-          </div>
-        </AppCard>
-        <AppCard v-if="alertas.vencidas > 0" padding="sm" class="border-l-4" style="border-color: var(--color-danger)">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <svg class="w-4 h-4 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-              <p class="text-sm font-medium" style="color: var(--text-primary)">
-                {{ alertas.vencidas }} vacuna(s) vencidas
-              </p>
-            </div>
-            <AppButton size="sm" variant="ghost" @click="filtroEstado = 'vencida'; searchQuery = ''">
-              Ver listado
-            </AppButton>
-          </div>
-        </AppCard>
-      </div>
-
-      <!-- Toolbar -->
-      <SearchToolbar
-        v-model:search="searchQuery"
-        search-placeholder="Buscar por mascota, vacuna, médico..."
-        :show-new-button="true"
-        new-button-label="Registrar vacuna"
-        @new="() => { resetForm(); showModal = true }"
-      >
-        <template #filters>
-          <AppSelect
-            v-model="filtroEstado"
-            :options="estadoOptions"
-            class="w-full sm:w-48"
-          />
-        </template>
-      </SearchToolbar>
-
-      <!-- Lista de registros -->
-      <AppCard padding="none">
-        <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--border-color)">
-          <h2 class="font-semibold" style="color: var(--text-primary)">
-            {{ totalElements }} registro(s)
-          </h2>
-        </div>
-
-        <LoadingState v-if="loading">Cargando registros...</LoadingState>
-
-        <EmptyState
-          v-else-if="registros.length === 0"
-          title="Sin registros"
-          message="No se encontraron registros de vacunación"
-        />
-
-        <div v-else class="divide-y" style="border-color: var(--border-color)">
-          <div
-            v-for="reg in registros"
-            :key="reg.id"
-            class="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3"
-          >
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="font-semibold" style="color: var(--text-primary)">{{ reg.mascotaNombre }}</span>
-                <AppBadge
-                  :variant="reg.estado === 'vigente' ? 'success' : 'danger'"
-                  size="sm"
-                >
-                  {{ reg.estado === 'vigente' ? 'Vigente' : 'Vencida' }}
-                </AppBadge>
+        <!-- Alertas de vacunación -->
+        <div v-if="alertas.proximas > 0 || alertas.vencidas > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <AppCard v-if="alertas.proximas > 0" padding="sm" class="border-l-4" style="border-color: var(--color-warning)">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 shrink-0 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <p class="text-sm font-medium" style="color: var(--text-primary)">
+                  {{ alertas.proximas }} vacuna(s) próxima(s) a vencer (30 días)
+                </p>
               </div>
-              <p class="text-sm" style="color: var(--text-secondary)">{{ reg.vacunaNombre }}</p>
-              <p class="text-xs" style="color: var(--text-muted)">
-                Dr. {{ reg.medicoNombre }} · {{ formatFecha(reg.fechaAplicacion) }}
-                <span v-if="reg.fechaProximaDosis">
-                  · Próxima: {{ formatFecha(reg.fechaProximaDosis) }}
-                </span>
-                <span v-if="reg.lote"> · Lote: {{ reg.lote }}</span>
-              </p>
+              <AppButton size="sm" variant="ghost" @click="filtroEstado = 'vigente'; busqueda.value = ''">Ver listado</AppButton>
             </div>
-          </div>
+          </AppCard>
+          <AppCard v-if="alertas.vencidas > 0" padding="sm" class="border-l-4" style="border-color: var(--color-danger)">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                <p class="text-sm font-medium" style="color: var(--text-primary)">
+                  {{ alertas.vencidas }} vacuna(s) vencidas
+                </p>
+              </div>
+              <AppButton size="sm" variant="ghost" @click="filtroEstado = 'vencida'; busqueda.value = ''">Ver listado</AppButton>
+            </div>
+          </AppCard>
         </div>
 
-        <div class="px-4 border-t" style="border-color: var(--border-color)">
-          <AppPagination
-            :page="page"
-            :total-pages="totalPages"
-            :total-elements="totalElements"
-            :page-size="pageSize"
-            :loading="loading"
-            @change="cargarRegistros"
-          />
-        </div>
-      </AppCard>
-    </div>
+        <SearchToolbar v-model:search="busqueda" search-placeholder="Buscar por mascota, vacuna, médico..."
+          :show-new-button="true" new-button-label="Registrar vacuna"
+          @new="() => { resetForm(); showModal = true }">
+          <template #filters>
+            <AppSelect v-model="filtroEstado" :options="estadoOptions" class="w-full sm:w-48" />
+          </template>
+        </SearchToolbar>
+      </template>
+
+      <template #content>
+        <AppCard fill-height padding="none">
+          <template #header>
+            <div class="px-6 py-4 border-b shrink-0" style="border-color: var(--border-color)">
+              <h2 class="font-semibold" style="color: var(--text-primary)">{{ totalElements }} registro(s)</h2>
+            </div>
+          </template>
+
+          <LoadingState v-if="loading">Cargando registros...</LoadingState>
+          <EmptyState v-else-if="registros.length === 0" title="Sin registros" message="No se encontraron registros de vacunación" />
+
+          <div v-else class="divide-y" style="border-color: var(--border-color)">
+            <div v-for="reg in registros" :key="reg.id" class="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-semibold" style="color: var(--text-primary)">{{ reg.mascotaNombre }}</span>
+                  <AppBadge :variant="reg.estado === 'vigente' ? 'success' : 'danger'" size="sm">
+                    {{ reg.estado === 'vigente' ? 'Vigente' : 'Vencida' }}
+                  </AppBadge>
+                </div>
+                <p class="text-sm" style="color: var(--text-secondary)">{{ reg.vacunaNombre }}</p>
+                <p class="text-xs" style="color: var(--text-muted)">
+                  Dr. {{ reg.medicoNombre }} · {{ formatFecha(reg.fechaAplicacion) }}
+                  <span v-if="reg.fechaProximaDosis"> · Próxima: {{ formatFecha(reg.fechaProximaDosis) }}</span>
+                  <span v-if="reg.lote"> · Lote: {{ reg.lote }}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <template #footer>
+            <div class="border-t" style="border-color: var(--border-color)">
+              <AppPagination :page="page" :total-pages="totalPages" :total-elements="totalElements"
+                :page-size="pageSize" :loading="loading" @change="cargarRegistros" />
+            </div>
+          </template>
+        </AppCard>
+      </template>
+    </TableViewLayout>
 
     <!-- Modal registrar vacuna -->
     <AppModal v-model="showModal" title="Registrar vacuna" size="lg">

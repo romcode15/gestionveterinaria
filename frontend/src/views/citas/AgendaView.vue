@@ -76,31 +76,28 @@ async function handleSubmit(data: CitaFormData) {
       <PageHeader title="Agenda" subtitle="Vista de calendario" />
     </template>
 
-    <div class="space-y-4">
+    <!-- Contenedor flex que ocupa todo el espacio disponible -->
+    <div class="flex flex-col h-full gap-4 p-6 min-h-0">
       <Transition name="fade">
-        <AppAlert v-if="successMessage" type="success" dismissible @dismiss="successMessage = ''">
+        <AppAlert v-if="successMessage" type="success" dismissible class="shrink-0" @dismiss="successMessage = ''">
           {{ successMessage }}
         </AppAlert>
       </Transition>
 
-      <!-- Toolbar sin campo de búsqueda, solo botón nuevo -->
-      <SearchToolbar
-        :show-search="false"
-        new-button-label="Nueva cita"
-        @new="abrirCrear"
-      />
+      <!-- Toolbar — fijo -->
+      <div class="shrink-0">
+        <SearchToolbar :show-search="false" new-button-label="Nueva cita" @new="abrirCrear" />
+      </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <!-- Calendario -->
-        <div class="lg:col-span-2">
+      <!-- Calendario + Sidebar — ocupa el resto -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
+        <div class="lg:col-span-2 min-h-0">
           <CitaCalendar
             :citas="citasStore.citas"
             v-model:fecha-seleccionada="citasStore.fechaSeleccionada"
           />
         </div>
-
-        <!-- Sidebar con citas del día -->
-        <div class="lg:col-span-1 min-h-100">
+        <div class="lg:col-span-1 min-h-0 flex flex-col">
           <AgendaSidebar
             :citas="citasDiaSeleccionado"
             :fecha="citasStore.fechaSeleccionada"

@@ -37,29 +37,29 @@ export const useClientesStore = defineStore('clientes', () => {
     error.value = null
     try {
       const p: PageParams = {
-        page:  params.page  ?? page.value,
-        size:  params.size  ?? pageSize.value,
-        sort:  params.sort  ?? 'apellido',
-        dir:   params.dir   ?? 'asc',
+        page: params.page ?? page.value,
+        size: params.size ?? pageSize.value,
+        sort: params.sort ?? 'apellido',
+        dir:  params.dir  ?? 'asc',
       }
 
       let res
       if (medicoId.value) {
-        // Veterinario: solo sus clientes via portal médico
+        // Veterinario: portal médico (filtro por búsqueda de texto solamente)
         const portalParams: PageParams = { ...p }
         if (searchQuery.value.trim()) portalParams.busqueda = searchQuery.value.trim()
         try {
           res = await api.getPaged<Cliente>('/api/portal/medico/clientes', portalParams)
         } catch {
-          // Si el backend aún no tiene el endpoint, mostrar vacío sin error crítico
           clientes.value = []; totalElements.value = 0; totalPages.value = 0; loading.value = false; return
         }
-      } else if (filtroEstado.value !== 'todos') {
-        res = await clientesService.porEstado(filtroEstado.value, p)
-      } else if (searchQuery.value.trim()) {
-        res = await clientesService.buscar(searchQuery.value.trim(), p)
       } else {
-        res = await clientesService.getAll(p)
+        // Admin / recepcionista: endpoint combinado — todos los filtros en un solo request
+        res = await clientesService.getAll({
+          ...p,
+          busqueda: searchQuery.value.trim() || undefined,
+          estado:   filtroEstado.value !== 'todos' ? filtroEstado.value : undefined,
+        })
       }
 
       clientes.value      = res.content

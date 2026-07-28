@@ -46,6 +46,18 @@ public class MascotaService {
         return mascotaRepository.findByNombreContainingIgnoreCase(nombre, pageable).map(this::toDTO);
     }
 
+    /**
+     * Búsqueda combinada con filtros opcionales (AND simultáneo).
+     * Reemplaza listarTodas + buscarPorNombre + filtrarPorEspecie como punto de entrada único.
+     */
+    @Transactional(readOnly = true)
+    public Page<MascotaDTO> buscarConFiltros(String busqueda, Integer especieId, String estado, Pageable pageable) {
+        String b = (busqueda  != null && !busqueda.isBlank())  ? busqueda.trim()  : null;
+        Integer e = especieId;   // null = sin filtro de especie
+        String  s = (estado   != null && !estado.isBlank() && !"todos".equals(estado)) ? estado.trim() : null;
+        return mascotaRepository.buscarCombinado(b, e, s, pageable).map(this::toDTO);
+    }
+
     public MascotaDTO crear(MascotaDTO dto) {
         Mascota mascota = toEntity(dto);
         return toDTO(mascotaRepository.save(mascota));

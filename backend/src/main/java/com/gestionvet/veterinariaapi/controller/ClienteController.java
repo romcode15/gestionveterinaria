@@ -29,19 +29,24 @@ public class ClienteController {
     private ClienteService clienteService;
 
     @GetMapping
-    @Operation(summary = "Listar clientes paginados",
-               description = "Parámetros: page (0-based), size (default 20), sort (campo,asc|desc)")
+    @Operation(summary = "Listar clientes con filtros combinados opcionales",
+               description = "Soporta busqueda (nombre/apellido/email/documento) y estado simultáneamente. " +
+                             "Si no se envían parámetros, devuelve todos paginado.")
     @ApiResponse(responseCode = "200", description = "Página obtenida correctamente")
     @PreAuthorize("hasAnyRole('ADMIN','VETERINARIO','RECEPCIONISTA')")
     public ResponseEntity<Page<ClienteDTO>> listarTodos(
-            @Parameter(description = "Número de página (0-based)") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Registros por página")       @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Texto a buscar en nombre, apellido, email o documento")
+            @RequestParam(required = false) String busqueda,
+            @Parameter(description = "Filtrar por estado: activo | inactivo")
+            @RequestParam(required = false) String estado,
+            @Parameter(description = "Número de página (0-based)") @RequestParam(defaultValue = "0")  int page,
+            @Parameter(description = "Registros por página")       @RequestParam(defaultValue = "10") int size,
             @Parameter(description = "Campo de ordenamiento")      @RequestParam(defaultValue = "apellido") String sort,
             @Parameter(description = "Dirección: asc o desc")      @RequestParam(defaultValue = "asc") String dir) {
 
         Pageable pageable = PageRequest.of(page, size,
                 dir.equalsIgnoreCase("desc") ? Sort.by(sort).descending() : Sort.by(sort).ascending());
-        return ResponseEntity.ok(clienteService.listarTodos(pageable));
+        return ResponseEntity.ok(clienteService.buscarConFiltros(busqueda, estado, pageable));
     }
 
     @GetMapping("/{id}")

@@ -20,7 +20,7 @@ function mapPage(page: SpringPage<Record<string, unknown>>): SpringPage<Mascota>
 }
 
 export const mascotasService = {
-  getAll(params: PageParams = {}): Promise<SpringPage<Mascota>> {
+  getAll(params: PageParams & { busqueda?: string; especieId?: number; estado?: string } = {}): Promise<SpringPage<Mascota>> {
     return api.getPaged<Record<string, unknown>>('/api/mascotas', { size: 10, sort: 'nombre', dir: 'asc', ...params }).then(mapPage)
   },
 

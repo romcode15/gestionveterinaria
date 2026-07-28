@@ -11,6 +11,8 @@ import AppPagination from '@/components/ui/AppPagination.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import SearchToolbar from '@/components/common/SearchToolbar.vue'
+import TableViewLayout from '@/components/common/TableViewLayout.vue'
+import { useFiltros } from '@/composables/useFiltros'
 import { useRecepcionistasStore } from '@/stores/recepcionistas.store'
 import type { Recepcionista, RecepcionistaFormData } from '@/types'
 
@@ -23,8 +25,10 @@ const columns = [
 
 const store = useRecepcionistasStore()
 
+const { busqueda } = useFiltros({ onCargar: (page) => store.cargar({ page }) })
+watch(busqueda, (val) => { store.searchQuery = val })
+
 onMounted(() => store.cargar({ page: 0 }))
-watch(() => store.searchQuery, () => store.cargar({ page: 0 }))
 
 const showModal    = ref(false)
 const editando     = ref<Recepcionista | null>(null)
@@ -89,105 +93,108 @@ async function handleEliminar(r: Recepcionista) {
       <PageHeader title="Recepcionistas" subtitle="Personal de recepción y atención al cliente" />
     </template>
 
-    <div class="space-y-4">
-      <Transition name="fade">
-        <AppAlert v-if="store.error" type="error" dismissible @dismiss="store.limpiarError()">
-          {{ store.error }}
-        </AppAlert>
-      </Transition>
-      <Transition name="fade">
-        <AppAlert v-if="successMsg" type="success" dismissible @dismiss="successMsg = ''">
-          {{ successMsg }}
-        </AppAlert>
-      </Transition>
+    <TableViewLayout>
+      <template #toolbar>
+        <Transition name="fade">
+          <AppAlert v-if="store.error" type="error" dismissible @dismiss="store.limpiarError()">
+            {{ store.error }}
+          </AppAlert>
+        </Transition>
+        <Transition name="fade">
+          <AppAlert v-if="successMsg" type="success" dismissible @dismiss="successMsg = ''">
+            {{ successMsg }}
+          </AppAlert>
+        </Transition>
+        <SearchToolbar
+          v-model:search="busqueda"
+          search-placeholder="Buscar por nombre o apellido..."
+          :show-new-button="true"
+          new-button-label="Nueva recepcionista"
+          @new="abrirCrear"
+        />
+      </template>
 
-      <SearchToolbar
-        v-model:search="store.searchQuery"
-        search-placeholder="Buscar por nombre o apellido..."
-        :show-new-button="true"
-        new-button-label="Nueva recepcionista"
-        @new="abrirCrear"
-      />
-
-      <AppCard padding="none">
-        <div class="px-6 py-4 border-b" style="border-color: var(--border-color)">
-          <h2 class="font-semibold" style="color: var(--text-primary)">
-            {{ store.totalElements }} recepcionista(s)
-          </h2>
-        </div>
-
-        <AppTable
-          :columns="columns"
-          :rows="store.recepcionistas"
-          :loading="store.loading"
-          empty-message="No se encontraron recepcionistas"
-          @row-click="abrirEditar"
-        >
-          <template #cell-nombre="{ row }">
-            <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm shrink-0"
-                style="background: rgba(20,184,166,0.15); color: #0d9488;">
-                {{ row.nombre[0] }}{{ row.apellido[0] }}
-              </div>
-              <div>
-                <p class="font-medium" style="color: var(--text-primary)">{{ row.nombre }} {{ row.apellido }}</p>
-              </div>
+      <template #content>
+        <AppCard fill-height padding="none">
+          <template #header>
+            <div class="px-6 py-4 border-b shrink-0" style="border-color: var(--border-color)">
+              <h2 class="font-semibold" style="color: var(--text-primary)">
+                {{ store.totalElements }} recepcionista(s)
+              </h2>
             </div>
           </template>
 
-          <template #cell-contacto="{ row }">
-            <p style="color: var(--text-secondary)">{{ row.email }}</p>
-            <p class="text-xs" style="color: var(--text-muted)">{{ row.telefono }}</p>
-          </template>
-
-          <template #cell-acceso="{ row }">
-            <span v-if="row.username" class="text-xs font-mono px-2 py-0.5 rounded flex items-center gap-1 w-fit"
-              style="background: var(--bg-hover); color: var(--text-secondary)">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-              </svg>
-              {{ row.username }}
-            </span>
-            <span v-else class="text-xs" style="color: var(--text-muted)">Sin acceso</span>
-          </template>
-
-          <template #cell-estado="{ row }">
-            <AppBadge :variant="row.estado === 'activo' ? 'success' : 'neutral'" dot>
-              {{ row.estado === 'activo' ? 'Activa' : 'Inactiva' }}
-            </AppBadge>
-          </template>
-
-          <template #actions="{ row }">
-            <div class="flex items-center justify-end gap-1">
-              <AppButton variant="ghost" size="sm" title="Editar" @click.stop="abrirEditar(row)">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </AppButton>
-              <AppButton variant="danger" size="sm" title="Desactivar" @click.stop="handleEliminar(row)">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                </svg>
-              </AppButton>
-            </div>
-          </template>
-        </AppTable>
-
-        <div class="px-4 border-t" style="border-color: var(--border-color)">
-          <AppPagination
-            :page="store.page"
-            :total-pages="store.totalPages"
-            :total-elements="store.totalElements"
-            :page-size="store.pageSize"
+          <AppTable
+            :columns="columns"
+            :rows="store.recepcionistas"
             :loading="store.loading"
-            @change="store.irAPagina"
-          />
-        </div>
-      </AppCard>
-    </div>
+            empty-message="No se encontraron recepcionistas"
+            @row-click="abrirEditar"
+          >
+            <template #cell-nombre="{ row }">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm shrink-0"
+                  style="background: rgba(20,184,166,0.15); color: #0d9488;">
+                  {{ row.nombre[0] }}{{ row.apellido[0] }}
+                </div>
+                <div>
+                  <p class="font-medium" style="color: var(--text-primary)">{{ row.nombre }} {{ row.apellido }}</p>
+                </div>
+              </div>
+            </template>
+            <template #cell-contacto="{ row }">
+              <p style="color: var(--text-secondary)">{{ row.email }}</p>
+              <p class="text-xs" style="color: var(--text-muted)">{{ row.telefono }}</p>
+            </template>
+            <template #cell-acceso="{ row }">
+              <span v-if="row.username" class="text-xs font-mono px-2 py-0.5 rounded flex items-center gap-1 w-fit"
+                style="background: var(--bg-hover); color: var(--text-secondary)">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                {{ row.username }}
+              </span>
+              <span v-else class="text-xs" style="color: var(--text-muted)">Sin acceso</span>
+            </template>
+            <template #cell-estado="{ row }">
+              <AppBadge :variant="row.estado === 'activo' ? 'success' : 'neutral'" dot>
+                {{ row.estado === 'activo' ? 'Activa' : 'Inactiva' }}
+              </AppBadge>
+            </template>
+            <template #actions="{ row }">
+              <div class="flex items-center justify-end gap-1">
+                <AppButton variant="ghost" size="sm" title="Editar" @click.stop="abrirEditar(row)">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </AppButton>
+                <AppButton variant="danger" size="sm" title="Desactivar" @click.stop="handleEliminar(row)">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+                </AppButton>
+              </div>
+            </template>
+          </AppTable>
+
+          <template #footer>
+            <div class="border-t" style="border-color: var(--border-color)">
+              <AppPagination
+                :page="store.page"
+                :total-pages="store.totalPages"
+                :total-elements="store.totalElements"
+                :page-size="store.pageSize"
+                :loading="store.loading"
+                @change="store.irAPagina"
+              />
+            </div>
+          </template>
+        </AppCard>
+      </template>
+    </TableViewLayout>
 
     <!-- Modal formulario -->
     <AppModal

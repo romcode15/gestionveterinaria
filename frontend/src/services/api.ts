@@ -95,6 +95,17 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   // 204 No Content (DELETE exitoso)
   if (response.status === 204) return undefined as unknown as T
 
+  // 401/403 — token expirado o inválido: limpiar sesión y redirigir al login
+  if (response.status === 401 || response.status === 403) {
+    const isLoginPage = window.location.pathname === '/login'
+    if (!isLoginPage) {
+      localStorage.removeItem(TOKEN_KEY)
+      localStorage.removeItem('vet_user')
+      window.location.href = '/login'
+    }
+    throw new ApiError(response.status, 'Sesión expirada. Por favor inicia sesión nuevamente.')
+  }
+
   if (!response.ok) {
     throw await parseError(response)
   }

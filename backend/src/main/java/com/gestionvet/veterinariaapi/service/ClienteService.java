@@ -60,6 +60,23 @@ public class ClienteService {
         return clienteRepository.findByEstado(estado, pageable).map(this::toDTO);
     }
 
+    // ── Búsqueda combinada con filtros opcionales ──────────────────────────
+
+    /**
+     * Punto de entrada único para listar/filtrar clientes.
+     * Cualquier combinación funciona simultáneamente:
+     *   busqueda=null, estado=null    → todos
+     *   busqueda="juan", estado=null  → solo por texto
+     *   busqueda=null, estado="activo"→ solo por estado
+     *   busqueda="juan", estado="activo" → texto AND estado (combinado real)
+     */
+    @Transactional(readOnly = true)
+    public Page<ClienteDTO> buscarConFiltros(String busqueda, String estado, Pageable pageable) {
+        String b = (busqueda != null && !busqueda.isBlank()) ? busqueda.trim() : null;
+        String e = (estado   != null && !estado.isBlank() && !"todos".equals(estado)) ? estado.trim() : null;
+        return clienteRepository.buscarCombinado(b, e, pageable).map(this::toDTO);
+    }
+
     // ── Crear ──────────────────────────────────────────────────────────────
 
     public ClienteDTO crear(ClienteDTO dto) {

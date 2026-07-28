@@ -13,6 +13,8 @@ import SearchToolbar from '@/components/common/SearchToolbar.vue'
 import EntitySummary from '@/components/common/EntitySummary.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import TableViewLayout from '@/components/common/TableViewLayout.vue'
+import { ESTADO_CITA_OPTIONS, ESTADO_CITA_CAMBIO_OPTIONS } from '@/constants/filterOptions'
 
 import CitaForm from '@/components/citas/CitaForm.vue'
 import { useCitasStore } from '@/stores/citas.store'
@@ -35,22 +37,8 @@ const citaEditando = ref<Cita | null>(null)
 const successMessage = ref('')
 const loading = ref(false)
 
-const estadoOptions = [
-  { value: 'todos',      label: 'Todos los estados' },
-  { value: 'pendiente',  label: 'Pendientes' },
-  { value: 'confirmada', label: 'Confirmadas' },
-  { value: 'en_curso',   label: 'En curso' },
-  { value: 'completada', label: 'Completadas' },
-  { value: 'cancelada',  label: 'Canceladas' },
-]
-
-const estadoCambioOptions = [
-  { value: 'pendiente',  label: 'Pendiente' },
-  { value: 'confirmada', label: 'Confirmar' },
-  { value: 'en_curso',   label: 'En curso' },
-  { value: 'completada', label: 'Completar' },
-  { value: 'cancelada',  label: 'Cancelar' },
-]
+const estadoOptions      = ESTADO_CITA_OPTIONS
+const estadoCambioOptions = ESTADO_CITA_CAMBIO_OPTIONS
 
 const medicoOptions = computed(() => [
   { value: '', label: 'Todos los médicos' },
@@ -127,123 +115,97 @@ function formatFecha(fecha: string): string {
       <PageHeader title="Citas" subtitle="Gestión de citas veterinarias" />
     </template>
 
-    <div class="space-y-4">
-      <Transition name="fade">
-        <AppAlert v-if="successMessage" type="success" dismissible @dismiss="successMessage = ''">
-          {{ successMessage }}
-        </AppAlert>
-      </Transition>
+    <TableViewLayout>
+      <template #toolbar>
+        <Transition name="fade">
+          <AppAlert v-if="successMessage" type="success" dismissible @dismiss="successMessage = ''">
+            {{ successMessage }}
+          </AppAlert>
+        </Transition>
+        <EntitySummary :items="summaryItems" />
+        <SearchToolbar new-button-label="Nueva cita" @new="abrirCrear">
+          <template #filters>
+            <AppSelect
+              :model-value="citasStore.filtroMedicoId ?? ''"
+              :options="medicoOptions"
+              class="w-full sm:flex-1"
+              @update:model-value="handleFiltroMedico"
+            />
+            <AppSelect v-model="citasStore.filtroEstado" :options="estadoOptions" class="w-full sm:w-48" />
+          </template>
+        </SearchToolbar>
+      </template>
 
-      <!-- Estadísticas -->
-      <EntitySummary :items="summaryItems" />
+      <template #content>
+        <AppCard fill-height padding="none">
+          <template #header>
+            <div class="px-6 py-4 border-b shrink-0" style="border-color: var(--border-color)">
+              <h2 class="font-semibold" style="color: var(--text-primary)">
+                {{ citasStore.citasFiltradas.length }} cita(s)
+              </h2>
+            </div>
+          </template>
 
-      <!-- Toolbar de filtros -->
-      <SearchToolbar
-        new-button-label="Nueva cita"
-        @new="abrirCrear"
-      >
-        <template #filters>
-          <AppSelect
-            :model-value="citasStore.filtroMedicoId ?? ''"
-            :options="medicoOptions"
-            class="w-full sm:flex-1"
-            @update:model-value="handleFiltroMedico"
-          />
-          <AppSelect
-            v-model="citasStore.filtroEstado"
-            :options="estadoOptions"
-            class="w-full sm:w-48"
-          />
-        </template>
-      </SearchToolbar>
-
-      <!-- Lista de citas -->
-      <AppCard padding="none">
-        <div class="px-6 py-4 border-b" style="border-color: var(--border-color)">
-          <h2 class="font-semibold" style="color: var(--text-primary)">
-            {{ citasStore.citasFiltradas.length }} cita(s)
-          </h2>
-        </div>
-
-        <div class="divide-y" style="border-color: var(--border-color)">
-          <EmptyState
-            v-if="citasStore.citasFiltradas.length === 0"
-            title="Sin citas"
-            message="No se encontraron citas con los filtros seleccionados"
-          />
-
-          <div
-            v-for="cita in citasStore.citasFiltradas"
-            :key="cita.id"
-            class="px-4 sm:px-6 py-4 vg-table-row-hover transition-colors"
-          >
-            <div class="flex gap-3">
-              <!-- Franja de color del tipo de cita -->
-              <div
-                class="w-1 rounded-full shrink-0 self-stretch"
-                :style="{ backgroundColor: cita.tipoCita?.color ?? '#6b7280' }"
-              />
-
-              <div class="flex-1 min-w-0 flex flex-col gap-2">
-                <!-- Fila 1: fecha/hora + info principal -->
-                <div class="flex items-start gap-3">
-                  <div class="text-center shrink-0 w-16 sm:w-20">
-                    <p class="text-xs font-semibold capitalize leading-tight" style="color: var(--text-muted)">
-                      {{ formatFecha(cita.fecha) }}
-                    </p>
-                    <p class="text-sm font-bold" style="color: var(--text-primary)">{{ cita.horaInicio }}</p>
-                    <p class="text-xs" style="color: var(--text-muted)">{{ cita.horaFin }}</p>
-                  </div>
-
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 flex-wrap">
-                      <p class="font-semibold text-sm" style="color: var(--text-primary)">
-                        {{ cita.mascotaNombre }}
+          <div class="divide-y" style="border-color: var(--border-color)">
+            <EmptyState
+              v-if="citasStore.citasFiltradas.length === 0"
+              title="Sin citas"
+              message="No se encontraron citas con los filtros seleccionados"
+            />
+            <div
+              v-for="cita in citasStore.citasFiltradas"
+              :key="cita.id"
+              class="px-4 sm:px-6 py-4 vg-table-row-hover transition-colors"
+            >
+              <div class="flex gap-3">
+                <div class="w-1 rounded-full shrink-0 self-stretch"
+                  :style="{ backgroundColor: cita.tipoCita?.color ?? '#6b7280' }" />
+                <div class="flex-1 min-w-0 flex flex-col gap-2">
+                  <div class="flex items-start gap-3">
+                    <div class="text-center shrink-0 w-16 sm:w-20">
+                      <p class="text-xs font-semibold capitalize leading-tight" style="color: var(--text-muted)">
+                        {{ formatFecha(cita.fecha) }}
                       </p>
-                      <AppBadge variant="neutral" size="sm">{{ cita.tipoCita?.nombre ?? '-' }}</AppBadge>
+                      <p class="text-sm font-bold" style="color: var(--text-primary)">{{ cita.horaInicio }}</p>
+                      <p class="text-xs" style="color: var(--text-muted)">{{ cita.horaFin }}</p>
                     </div>
-                    <p class="text-xs truncate mt-0.5" style="color: var(--text-secondary)">{{ cita.motivo }}</p>
-                    <p class="text-xs truncate mt-0.5" style="color: var(--text-muted)">
-                      {{ cita.medicoNombre }} · {{ cita.clienteNombre }}
-                    </p>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <p class="font-semibold text-sm" style="color: var(--text-primary)">{{ cita.mascotaNombre }}</p>
+                        <AppBadge variant="neutral" size="sm">{{ cita.tipoCita?.nombre ?? '-' }}</AppBadge>
+                      </div>
+                      <p class="text-xs truncate mt-0.5" style="color: var(--text-secondary)">{{ cita.motivo }}</p>
+                      <p class="text-xs truncate mt-0.5" style="color: var(--text-muted)">
+                        {{ cita.medicoNombre }} · {{ cita.clienteNombre }}
+                      </p>
+                    </div>
                   </div>
-                </div>
-
-                <!-- Fila 2: estado + cambio de estado + botón editar -->
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <StatusBadge :status="cita.estado" />
-
-                  <div class="flex items-center gap-2">
-                    <AppSelect
-                      v-if="cita.estado !== 'completada' && cita.estado !== 'cancelada'"
-                      :model-value="cita.estado"
-                      :options="estadoCambioOptions"
-                      class="w-full sm:w-auto text-xs"
-                      aria-label="Cambiar estado"
-                      @update:model-value="cambiarEstado(cita, $event)"
-                    />
-
-                    <AppButton
-                      variant="ghost"
-                      size="sm"
-                      aria-label="Editar cita"
-                      title="Editar cita"
-                      @click="abrirEditar(cita)"
-                    >
-                      <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      <span class="sm:hidden">Editar</span>
-                    </AppButton>
+                  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <StatusBadge :status="cita.estado" />
+                    <div class="flex items-center gap-2">
+                      <AppSelect
+                        v-if="cita.estado !== 'completada' && cita.estado !== 'cancelada'"
+                        :model-value="cita.estado"
+                        :options="estadoCambioOptions"
+                        class="w-full sm:w-auto text-xs"
+                        aria-label="Cambiar estado"
+                        @update:model-value="cambiarEstado(cita, $event)"
+                      />
+                      <AppButton variant="ghost" size="sm" aria-label="Editar cita" @click="abrirEditar(cita)">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </AppButton>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </AppCard>
-    </div>
+        </AppCard>
+      </template>
+    </TableViewLayout>
 
     <AppModal
       v-model="showModal"

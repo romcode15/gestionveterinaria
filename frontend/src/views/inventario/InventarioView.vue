@@ -88,13 +88,14 @@ function formatFecha(f: string) {
       <PageHeader title="Inventario" subtitle="Alertas y resumen" />
     </template>
 
-    <div class="space-y-4">
+    <!-- Contenedor flex para toda la vista -->
+    <div class="flex flex-col h-full gap-4 p-6 overflow-y-auto">
       <Transition name="fade">
         <AppAlert v-if="error" type="error" dismissible @dismiss="error = null">{{ error }}</AppAlert>
       </Transition>
 
       <!-- Acceso rápido -->
-      <div class="flex gap-3 flex-wrap">
+      <div class="flex gap-3 flex-wrap shrink-0">
         <AppButton @click="irAProductos">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -114,7 +115,6 @@ function formatFecha(f: string) {
       <LoadingState v-if="loading">Cargando alertas...</LoadingState>
 
       <template v-else-if="alertas">
-        <!-- Stock bajo -->
         <AppCard>
           <div class="flex items-center justify-between mb-3">
             <h3 class="font-semibold flex items-center gap-2" style="color: var(--text-primary)">
@@ -126,30 +126,22 @@ function formatFecha(f: string) {
             </h3>
             <AppBadge variant="danger">{{ alertas.stockBajo.length }}</AppBadge>
           </div>
-          <div v-if="alertas.stockBajo.length === 0" style="color: var(--text-muted)">
-            Sin alertas de stock bajo
-          </div>
+          <div v-if="alertas.stockBajo.length === 0" style="color: var(--text-muted)">Sin alertas de stock bajo</div>
           <div v-else class="space-y-2">
-            <div
-              v-for="item in alertas.stockBajo"
-              :key="item.productoId"
+            <div v-for="item in alertas.stockBajo" :key="item.productoId"
               class="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-lg"
-              style="background-color: var(--bg-surface-2)"
-            >
+              style="background-color: var(--bg-surface-2)">
               <div>
                 <span class="font-medium" style="color: var(--text-primary)">{{ item.nombre }}</span>
                 <span class="text-xs ml-2" style="color: var(--text-muted)">{{ item.categoria }}</span>
               </div>
-              <div>
-                <span class="text-sm font-medium" style="color: var(--color-danger)">
-                  {{ item.stockActual }} / {{ item.stockMinimo }} (mínimo)
-                </span>
-              </div>
+              <span class="text-sm font-medium" style="color: var(--color-danger)">
+                {{ item.stockActual }} / {{ item.stockMinimo }} (mínimo)
+              </span>
             </div>
           </div>
         </AppCard>
 
-        <!-- Lotes próximos a vencer -->
         <AppCard>
           <div class="flex items-center justify-between mb-3">
             <h3 class="font-semibold flex items-center gap-2" style="color: var(--text-primary)">
@@ -161,31 +153,23 @@ function formatFecha(f: string) {
             </h3>
             <AppBadge variant="warning">{{ alertas.lotesProximos.length }}</AppBadge>
           </div>
-          <div v-if="alertas.lotesProximos.length === 0" style="color: var(--text-muted)">
-            Sin lotes próximos a vencer
-          </div>
+          <div v-if="alertas.lotesProximos.length === 0" style="color: var(--text-muted)">Sin lotes próximos a vencer</div>
           <div v-else class="space-y-2">
-            <div
-              v-for="item in alertas.lotesProximos"
-              :key="item.loteId"
+            <div v-for="item in alertas.lotesProximos" :key="item.loteId"
               class="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-lg"
-              style="background-color: var(--bg-surface-2)"
-            >
+              style="background-color: var(--bg-surface-2)">
               <div>
                 <span class="font-medium" style="color: var(--text-primary)">{{ item.productoNombre }}</span>
                 <span class="text-xs ml-2" style="color: var(--text-muted)">Lote {{ item.numeroLote }}</span>
               </div>
-              <div>
-                <span class="text-sm" style="color: var(--text-secondary)">
-                  Vence: {{ formatFecha(item.fechaVencimiento) }}
-                  <span class="font-medium" style="color: var(--color-warning)">({{ item.diasRestantes }} días)</span>
-                </span>
-              </div>
+              <span class="text-sm" style="color: var(--text-secondary)">
+                Vence: {{ formatFecha(item.fechaVencimiento) }}
+                <span class="font-medium" style="color: var(--color-warning)">({{ item.diasRestantes }} días)</span>
+              </span>
             </div>
           </div>
         </AppCard>
 
-        <!-- Lotes vencidos -->
         <AppCard>
           <div class="flex items-center justify-between mb-3">
             <h3 class="font-semibold flex items-center gap-2" style="color: var(--text-primary)">
@@ -196,26 +180,18 @@ function formatFecha(f: string) {
             </h3>
             <AppBadge variant="danger">{{ alertas.lotesVencidos.length }}</AppBadge>
           </div>
-          <div v-if="alertas.lotesVencidos.length === 0" style="color: var(--text-muted)">
-            Sin lotes vencidos
-          </div>
+          <div v-if="alertas.lotesVencidos.length === 0" style="color: var(--text-muted)">Sin lotes vencidos</div>
           <div v-else class="space-y-2">
-            <div
-              v-for="item in alertas.lotesVencidos"
-              :key="item.loteId"
+            <div v-for="item in alertas.lotesVencidos" :key="item.loteId"
               class="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-lg"
-              style="background-color: var(--bg-surface-2)"
-            >
+              style="background-color: var(--bg-surface-2)">
               <div>
                 <span class="font-medium" style="color: var(--text-primary)">{{ item.productoNombre }}</span>
                 <span class="text-xs ml-2" style="color: var(--text-muted)">Lote {{ item.numeroLote }}</span>
               </div>
-              <div>
-                <span class="text-sm" style="color: var(--color-danger)">
-                  Vencido: {{ formatFecha(item.fechaVencimiento) }}
-                  ({{ item.diasVencido }} días)
-                </span>
-              </div>
+              <span class="text-sm" style="color: var(--color-danger)">
+                Vencido: {{ formatFecha(item.fechaVencimiento) }} ({{ item.diasVencido }} días)
+              </span>
             </div>
           </div>
         </AppCard>

@@ -20,6 +20,36 @@ public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
     Page<Cliente> findByEstado(String estado, Pageable pageable);
     long countByEstado(String estado);
 
+    /**
+     * Búsqueda combinada con filtros opcionales.
+     * Si un parámetro es null, esa condición se ignora (AND :param IS NULL OR ...).
+     * Permite combinar búsqueda por texto + estado simultáneamente.
+     */
+    @Query(value = """
+        SELECT * FROM clientes c
+        WHERE (CAST(:busqueda AS TEXT) IS NULL
+               OR LOWER(c.nombre)           LIKE LOWER('%' || CAST(:busqueda AS TEXT) || '%')
+               OR LOWER(c.apellido)         LIKE LOWER('%' || CAST(:busqueda AS TEXT) || '%')
+               OR LOWER(c.email)            LIKE LOWER('%' || CAST(:busqueda AS TEXT) || '%')
+               OR LOWER(c.numero_documento) LIKE LOWER('%' || CAST(:busqueda AS TEXT) || '%'))
+          AND (CAST(:estado AS TEXT) IS NULL OR c.estado = CAST(:estado AS TEXT))
+        ORDER BY c.apellido ASC
+        """,
+        countQuery = """
+        SELECT COUNT(*) FROM clientes c
+        WHERE (CAST(:busqueda AS TEXT) IS NULL
+               OR LOWER(c.nombre)           LIKE LOWER('%' || CAST(:busqueda AS TEXT) || '%')
+               OR LOWER(c.apellido)         LIKE LOWER('%' || CAST(:busqueda AS TEXT) || '%')
+               OR LOWER(c.email)            LIKE LOWER('%' || CAST(:busqueda AS TEXT) || '%')
+               OR LOWER(c.numero_documento) LIKE LOWER('%' || CAST(:busqueda AS TEXT) || '%'))
+          AND (CAST(:estado AS TEXT) IS NULL OR c.estado = CAST(:estado AS TEXT))
+        """,
+        nativeQuery = true)
+    Page<Cliente> buscarCombinado(
+            @Param("busqueda") String busqueda,
+            @Param("estado")   String estado,
+            Pageable pageable);
+
     // Incrementar o decrementar numero_mascotas directamente en BD
     @Modifying
     @Query(value = "UPDATE clientes SET numero_mascotas = numero_mascotas + :delta WHERE id = :id",

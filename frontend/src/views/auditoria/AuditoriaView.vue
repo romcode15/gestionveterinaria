@@ -11,6 +11,9 @@ import AppToggle from '@/components/ui/AppToggle.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import SearchToolbar from '@/components/common/SearchToolbar.vue'
+import TableViewLayout from '@/components/common/TableViewLayout.vue'
+import { ACCION_AUDITORIA_OPTIONS } from '@/constants/filterOptions'
+import { useFiltros } from '@/composables/useFiltros'
 import type { TableColumn } from '@/types'
 import { api } from '@/services/api'
 
@@ -60,16 +63,7 @@ const columns: TableColumn<AuditoriaEntry>[] = [
   { key: 'exitoso',    label: 'Resultado', align: 'center' },
 ]
 
-// ── Opciones de filtros ────────────────────────────────────────────────────
-
-const accionOptions = [
-  { value: '', label: 'Todas las acciones' },
-  { value: 'CREATE',  label: 'Crear' },
-  { value: 'UPDATE',  label: 'Actualizar' },
-  { value: 'DELETE',  label: 'Eliminar' },
-  { value: 'LOGIN',   label: 'Login' },
-  { value: 'LOGOUT',  label: 'Logout' },
-]
+const accionOptions = ACCION_AUDITORIA_OPTIONS
 
 // ── Carga de datos ─────────────────────────────────────────────────────────
 
@@ -104,10 +98,19 @@ async function cargarAuditoria(p = 0) {
 
 onMounted(() => cargarAuditoria())
 
-watch(
-  [filtroUsuario, filtroAccion, filtroFechaInicio, filtroFechaFin, soloErrores],
-  () => cargarAuditoria(0),
-)
+// Composable: debounce 400ms para los campos de texto (usuario, fechas)
+// Evita disparar un request por cada tecla en un módulo con 5 campos de filtro
+const { } = useFiltros({ onCargar: cargarAuditoria })
+
+// Selects y toggle responden inmediatamente; inputs de texto van por debounce
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+function dispararConDebounce() {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => cargarAuditoria(0), 400)
+}
+
+watch([filtroUsuario, filtroFechaInicio, filtroFechaFin], dispararConDebounce)
+watch([filtroAccion, soloErrores], () => cargarAuditoria(0))
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -137,112 +140,78 @@ function formatFecha(fecha: string): string {
       <PageHeader title="Auditoría" subtitle="Registro de actividades del sistema" />
     </template>
 
-    <div class="space-y-4">
-      <!-- Error global -->
-      <Transition name="fade">
-        <AppAlert v-if="error" type="error" dismissible @dismiss="error = null">
-          {{ error }}
-        </AppAlert>
-      </Transition>
+    <TableViewLayout>
+      <template #toolbar>
+        <Transition name="fade">
+          <AppAlert v-if="error" type="error" dismissible @dismiss="error = null">
+            {{ error }}
+          </AppAlert>
+        </Transition>
+        <SearchToolbar :show-new-button="false">
+          <template #filters>
+            <div class="flex flex-wrap gap-3 w-full">
+              <AppInput v-model="filtroUsuario" placeholder="Usuario" class="w-full sm:w-40" />
+              <AppSelect v-model="filtroAccion" :options="accionOptions" class="w-full sm:w-40" />
+              <AppInput v-model="filtroFechaInicio" type="date" class="w-full sm:w-36" />
+              <AppInput v-model="filtroFechaFin" type="date" class="w-full sm:w-36" />
+              <AppToggle v-model="soloErrores" label="Solo errores" aria-label="Mostrar solo errores" />
+            </div>
+          </template>
+        </SearchToolbar>
+      </template>
 
-      <!-- Filtros -->
-      <SearchToolbar :show-new-button="false">
-        <template #filters>
-          <div class="flex flex-wrap gap-3 w-full">
-            <AppInput
-              v-model="filtroUsuario"
-              placeholder="Usuario"
-              class="w-full sm:w-40"
-            />
-            <AppSelect
-              v-model="filtroAccion"
-              :options="accionOptions"
-              class="w-full sm:w-40"
-            />
-            <AppInput
-              v-model="filtroFechaInicio"
-              type="date"
-              class="w-full sm:w-36"
-            />
-            <AppInput
-              v-model="filtroFechaFin"
-              type="date"
-              class="w-full sm:w-36"
-            />
-            <AppToggle
-              v-model="soloErrores"
-              label="Solo errores"
-              aria-label="Mostrar solo errores"
-            />
-          </div>
-        </template>
-      </SearchToolbar>
-
-      <!-- Tabla -->
-      <AppCard padding="none">
-        <div
-          class="px-6 py-4 border-b"
-          style="border-color: var(--border-color)"
-        >
-          <h2 class="font-semibold" style="color: var(--text-primary)">
-            {{ totalElements }} registro(s)
-          </h2>
-        </div>
-
-        <AppTable
-          :columns="columns"
-          :rows="auditoria"
-          :loading="loading"
-          empty-message="No hay registros para los filtros seleccionados"
-          row-key="id"
-        >
-          <!-- Fecha formateada -->
-          <template #cell-createdAt="{ value }">
-            <span class="text-xs whitespace-nowrap" style="color: var(--text-secondary)">
-              {{ formatFecha(value as string) }}
-            </span>
+      <template #content>
+        <AppCard fill-height padding="none">
+          <template #header>
+            <div class="px-6 py-4 border-b shrink-0" style="border-color: var(--border-color)">
+              <h2 class="font-semibold" style="color: var(--text-primary)">
+                {{ totalElements }} registro(s)
+              </h2>
+            </div>
           </template>
 
-          <!-- Usuario destacado -->
-          <template #cell-username="{ value }">
-            <span class="font-medium" style="color: var(--text-primary)">{{ value }}</span>
-          </template>
-
-          <!-- Badge de acción -->
-          <template #cell-accion="{ value }">
-            <AppBadge :variant="colorAccion(value as string)" size="sm">
-              {{ value }}
-            </AppBadge>
-          </template>
-
-          <!-- IP en muted -->
-          <template #cell-ipOrigen="{ value }">
-            <span class="text-xs" style="color: var(--text-muted)">{{ value ?? '—' }}</span>
-          </template>
-
-          <!-- Badge de resultado -->
-          <template #cell-exitoso="{ value }">
-            <AppBadge
-              :variant="value ? 'success' : 'danger'"
-              size="sm"
-              dot
-            >
-              {{ value ? 'exitoso' : 'fallido' }}
-            </AppBadge>
-          </template>
-        </AppTable>
-
-        <div class="px-4 border-t" style="border-color: var(--border-color)">
-          <AppPagination
-            :page="page"
-            :total-pages="totalPages"
-            :total-elements="totalElements"
-            :page-size="pageSize"
+          <AppTable
+            :columns="columns"
+            :rows="auditoria"
             :loading="loading"
-            @change="cargarAuditoria"
-          />
-        </div>
-      </AppCard>
-    </div>
+            empty-message="No hay registros para los filtros seleccionados"
+            row-key="id"
+          >
+            <template #cell-createdAt="{ value }">
+              <span class="text-xs whitespace-nowrap" style="color: var(--text-secondary)">
+                {{ formatFecha(value as string) }}
+              </span>
+            </template>
+            <template #cell-username="{ value }">
+              <span class="font-medium" style="color: var(--text-primary)">{{ value }}</span>
+            </template>
+            <template #cell-accion="{ value }">
+              <AppBadge :variant="colorAccion(value as string)" size="sm">{{ value }}</AppBadge>
+            </template>
+            <template #cell-ipOrigen="{ value }">
+              <span class="text-xs" style="color: var(--text-muted)">{{ value ?? '—' }}</span>
+            </template>
+            <template #cell-exitoso="{ value }">
+              <AppBadge :variant="value ? 'success' : 'danger'" size="sm" dot>
+                {{ value ? 'exitoso' : 'fallido' }}
+              </AppBadge>
+            </template>
+          </AppTable>
+
+          <template #footer>
+            <div class="border-t" style="border-color: var(--border-color)">
+              <AppPagination
+                :page="page"
+                :total-pages="totalPages"
+                :total-elements="totalElements"
+                :page-size="pageSize"
+                :loading="loading"
+                @change="cargarAuditoria"
+              />
+            </div>
+          </template>
+        </AppCard>
+      </template>
+    </TableViewLayout>
   </DashboardLayout>
 </template>

@@ -13,7 +13,9 @@ import PageHeader from '@/components/common/PageHeader.vue'
 import SearchToolbar from '@/components/common/SearchToolbar.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
+import TableViewLayout from '@/components/common/TableViewLayout.vue'
 import FormActions from '@/components/forms/FormActions.vue'
+import { useFiltros } from '@/composables/useFiltros'
 import { api } from '@/services/api'
 
 interface Vacuna {
@@ -29,7 +31,8 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const successMsg = ref('')
 const vacunas = ref<Vacuna[]>([])
-const searchQuery = ref('')
+// busqueda local con debounce — VacunasView filtra en memoria, no pagina contra el backend
+const { busqueda } = useFiltros({ onCargar: () => {} })
 
 const showModal = ref(false)
 const editando = ref<Vacuna | null>(null)
@@ -133,8 +136,8 @@ async function toggleEstado(vacuna: Vacuna) {
 }
 
 const vacunasFiltradas = computed(() => {
-  if (!searchQuery.value) return vacunas.value
-  const q = searchQuery.value.toLowerCase()
+  if (!busqueda.value) return vacunas.value
+  const q = busqueda.value.toLowerCase()
   return vacunas.value.filter(v =>
     v.nombre.toLowerCase().includes(q) ||
     (v.descripcion && v.descripcion.toLowerCase().includes(q))
@@ -148,75 +151,70 @@ const vacunasFiltradas = computed(() => {
       <PageHeader title="Catálogo de vacunas" subtitle="Gestión de vacunas disponibles" />
     </template>
 
-    <div class="space-y-4">
-      <Transition name="fade">
-        <AppAlert v-if="error" type="error" dismissible @dismiss="error = null">{{ error }}</AppAlert>
-      </Transition>
-      <Transition name="fade">
-        <AppAlert v-if="successMsg" type="success" dismissible @dismiss="successMsg = ''">{{ successMsg }}</AppAlert>
-      </Transition>
-
-      <SearchToolbar
-        v-model:search="searchQuery"
-        search-placeholder="Buscar por nombre..."
-        :show-new-button="true"
-        new-button-label="Nueva vacuna"
-        @new="abrirCrear"
-      />
-
-      <AppCard padding="none">
-        <div class="px-6 py-4 border-b flex items-center justify-between" style="border-color: var(--border-color)">
-          <h2 class="font-semibold" style="color: var(--text-primary)">
-            {{ vacunasFiltradas.length }} vacuna(s)
-          </h2>
-        </div>
-
-        <LoadingState v-if="loading">Cargando vacunas...</LoadingState>
-
-        <EmptyState
-          v-else-if="vacunasFiltradas.length === 0"
-          title="Sin vacunas"
-          message="No hay vacunas registradas en el catálogo"
+    <TableViewLayout>
+      <template #toolbar>
+        <Transition name="fade">
+          <AppAlert v-if="error" type="error" dismissible @dismiss="error = null">{{ error }}</AppAlert>
+        </Transition>
+        <Transition name="fade">
+          <AppAlert v-if="successMsg" type="success" dismissible @dismiss="successMsg = ''">{{ successMsg }}</AppAlert>
+        </Transition>
+        <SearchToolbar
+          v-model:search="busqueda"
+          search-placeholder="Buscar por nombre..."
+          :show-new-button="true"
+          new-button-label="Nueva vacuna"
+          @new="abrirCrear"
         />
+      </template>
 
-        <div v-else class="divide-y" style="border-color: var(--border-color)">
-          <div
-            v-for="v in vacunasFiltradas"
-            :key="v.id"
-            class="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3"
-          >
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="font-semibold" style="color: var(--text-primary)">{{ v.nombre }}</span>
-                <AppBadge :variant="v.activo ? 'success' : 'neutral'" size="sm">
-                  {{ v.activo ? 'Activo' : 'Inactivo' }}
-                </AppBadge>
-              </div>
-              <p v-if="v.descripcion" class="text-sm" style="color: var(--text-secondary)">{{ v.descripcion }}</p>
-              <div class="flex gap-4 text-xs mt-1" style="color: var(--text-muted)">
-                <span v-if="v.especieAplicable">Especie: {{ v.especieAplicable }}</span>
-                <span v-if="v.intervaloDias">Intervalo: {{ v.intervaloDias }} días</span>
-              </div>
+      <template #content>
+        <AppCard fill-height padding="none">
+          <template #header>
+            <div class="px-6 py-4 border-b shrink-0" style="border-color: var(--border-color)">
+              <h2 class="font-semibold" style="color: var(--text-primary)">
+                {{ vacunasFiltradas.length }} vacuna(s)
+              </h2>
             </div>
-            <div class="flex gap-2 shrink-0">
-              <AppButton size="sm" variant="ghost" @click="abrirEditar(v)">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </AppButton>
-              <AppButton
-                size="sm"
-                :variant="v.activo ? 'danger' : 'ghost'"
-                @click="toggleEstado(v)"
-              >
-                {{ v.activo ? 'Desactivar' : 'Activar' }}
-              </AppButton>
+          </template>
+
+          <LoadingState v-if="loading">Cargando vacunas...</LoadingState>
+          <EmptyState v-else-if="vacunasFiltradas.length === 0" title="Sin vacunas" message="No hay vacunas registradas en el catálogo" />
+          <div v-else class="divide-y" style="border-color: var(--border-color)">
+            <div
+              v-for="v in vacunasFiltradas"
+              :key="v.id"
+              class="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3"
+            >
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-semibold" style="color: var(--text-primary)">{{ v.nombre }}</span>
+                  <AppBadge :variant="v.activo ? 'success' : 'neutral'" size="sm">
+                    {{ v.activo ? 'Activo' : 'Inactivo' }}
+                  </AppBadge>
+                </div>
+                <p v-if="v.descripcion" class="text-sm" style="color: var(--text-secondary)">{{ v.descripcion }}</p>
+                <div class="flex gap-4 text-xs mt-1" style="color: var(--text-muted)">
+                  <span v-if="v.especieAplicable">Especie: {{ v.especieAplicable }}</span>
+                  <span v-if="v.intervaloDias">Intervalo: {{ v.intervaloDias }} días</span>
+                </div>
+              </div>
+              <div class="flex gap-2 shrink-0">
+                <AppButton size="sm" variant="ghost" @click="abrirEditar(v)">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </AppButton>
+                <AppButton size="sm" :variant="v.activo ? 'danger' : 'ghost'" @click="toggleEstado(v)">
+                  {{ v.activo ? 'Desactivar' : 'Activar' }}
+                </AppButton>
+              </div>
             </div>
           </div>
-        </div>
-      </AppCard>
-    </div>
+        </AppCard>
+      </template>
+    </TableViewLayout>
 
     <AppModal v-model="showModal" :title="editando ? 'Editar vacuna' : 'Nueva vacuna'" size="md">
       <form @submit.prevent="guardar" class="space-y-4">
